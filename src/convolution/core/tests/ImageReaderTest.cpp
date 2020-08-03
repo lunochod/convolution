@@ -85,43 +85,46 @@ TEST(ImageReaderTest, ColumnBuffer) {
   int32_t qx = 0;
   int32_t qy = 0;
 
-  // iterate over the test image line-by-line vertically
-  for (int32_t iy = 0; iy < cimg.height(); ++iy) {
-    // iterate over the current line pixel-by-pixel horizontally
-    for (int32_t ix = 0; ix < cimg.width(); ++ix) {
-      // clear the patch
-      memset(patch.data(), 0, fHeight * fWidth);
-      // read the image data covering the filter
-      patchIdx = 0;
-      for (uint32_t fy = 0; fy < filter.height(); ++fy) {
-        for (uint32_t fx = 0; fx < filter.width(); ++fx, ++patchIdx) {
-          // calculate the image coordinates to read from
-          qx = ix - filter.leftPadding() + fx;
-          qy = iy - filter.topPadding() + fy;
-          if (qx >= 0 && qx < (int32_t)cimg.width()) {
-            if (qy >= 0 && qy < (int32_t)cimg.height()) {
-              // read pixel data into patch
-              patch[patchIdx] = cimg(qx, qy, 0, 0);
+  // iterate over the test image channel-by-channel
+  for (int32_t img_c = 0; img_c < cimg.spectrum(); ++img_c) {
+    // iterate over the test image line-by-line vertically
+    for (int32_t img_y = 0; img_y < cimg.height(); ++img_y) {
+      // iterate over the current line pixel-by-pixel horizontally
+      for (int32_t img_x = 0; img_x < cimg.width(); ++img_x) {
+        // clear the patch
+        memset(patch.data(), 0, fHeight * fWidth);
+        // read the image data covering the filter
+        patchIdx = 0;
+        for (uint32_t filter_y = 0; filter_y < filter.height(); ++filter_y) {
+          for (uint32_t filter_x = 0; filter_x < filter.width(); ++filter_x, ++patchIdx) {
+            // calculate the image coordinates to read from
+            qx = img_x - filter.leftPadding() + filter_x;
+            qy = img_y - filter.topPadding() + filter_y;
+            if (qx >= 0 && qx < (int32_t)cimg.width()) {
+              if (qy >= 0 && qy < (int32_t)cimg.height()) {
+                // read pixel data into patch
+                patch[patchIdx] = cimg(qx, qy, 0, img_c);
+              }
             }
           }
         }
-      }
 
-      uint8_t const* colPtr = colBuffer.data() + image.calcColumnBufferOffset(filter, ix, iy, 0, 0, 0);
-      // compare the patch data with the data in the column buffer
-      if (memcmp(patch.data(), colPtr, patch.size()) != 0) {
-        printf("TEST: ");
-        for (uint32_t pIdx = 0; pIdx < patch.size(); ++pIdx) {
-          printf("%4d", patch[pIdx]);
+        uint8_t const* colPtr = colBuffer.data() + image.calcColumnBufferOffset(filter, img_x, img_y, img_c, 0, 0);
+        // compare the patch data with the data in the column buffer
+        if (memcmp(patch.data(), colPtr, patch.size()) != 0) {
+          printf("TEST: ");
+          for (uint32_t pIdx = 0; pIdx < patch.size(); ++pIdx) {
+            printf("%4d", patch[pIdx]);
+          }
+          printf("\n");
+          printf("COLB: ");
+          for (uint32_t pIdx = 0; pIdx < patch.size(); ++pIdx) {
+            printf("%4d", colPtr[pIdx]);
+          }
+          printf("\n");
         }
-        printf("\n");
-        printf("COLB: ");
-        for (uint32_t pIdx = 0; pIdx < patch.size(); ++pIdx) {
-          printf("%4d", colPtr[pIdx]);
-        }
-        printf("\n");
+        ASSERT_EQ(memcmp(patch.data(), colPtr, patch.size()), 0);
       }
-      ASSERT_EQ(memcmp(patch.data(), colPtr, patch.size()), 0);
     }
   }
 }
