@@ -1,9 +1,9 @@
 #include <convolution/core/Filter.h>
 #include <convolution/core/logging.h>
+#include <convolution/core/tests/TestResources.h>
 #include <gtest/gtest.h>
 
 #include <limits>
-#include <random>
 
 using namespace convolution;
 
@@ -12,23 +12,6 @@ namespace {
 template <class T>
 class FilterTestFixture : public testing::Test {
 };
-
-template <typename T, uint32_t kHeight, uint32_t kWidth, uint32_t kInputChannels = 1, uint32_t kOutputChannels = 1>
-std::vector<T> initRandomFilterData() {
-  constexpr uint32_t kNumElements = kHeight * kWidth * kInputChannels * kOutputChannels;
-  static_assert(kNumElements != 0, "Filter dimensions are ill-defined.");
-
-  std::random_device device;
-  std::mt19937 generator(device());
-  std::uniform_int_distribution<T> distribution(1, std::numeric_limits<T>::max());
-
-  std::vector<T> elements(kNumElements);
-  for (uint32_t idx = 0; idx < kNumElements; ++idx) {
-    elements[idx] = distribution(generator);
-  }
-
-  return elements;  // return by value is ok since the vector data lives on the HEAP
-}
 
 }  // namespace
 
@@ -39,7 +22,7 @@ TYPED_TEST(FilterTestFixture, Instantiate) {
   constexpr uint32_t kHeight = 3;
   constexpr uint32_t kWidth = 5;
 
-  auto elements = initRandomFilterData<TypeParam, kHeight, kWidth>();
+  auto elements = core::test::getRandomVector<TypeParam>(kHeight * kWidth);
   using TestFilter = core::Filter<TypeParam, kHeight, kWidth>;
   ASSERT_NO_THROW(TestFilter f(elements));
 }
@@ -50,7 +33,7 @@ TYPED_TEST(FilterTestFixture, Get) {
   constexpr uint32_t kInputChannels = 3;
   constexpr uint32_t kOutputChannels = 1;
 
-  auto elements = initRandomFilterData<TypeParam, kHeight, kWidth, kInputChannels, kOutputChannels>();
+  auto elements = core::test::getRandomVector<TypeParam>(kHeight * kWidth * kInputChannels * kOutputChannels);
   using TestFilter = core::Filter<TypeParam, kHeight, kWidth, kInputChannels, kOutputChannels>;
   TestFilter f(elements);
 
@@ -69,7 +52,7 @@ TYPED_TEST(FilterTestFixture, ReadAt) {
   constexpr uint32_t kInputChannels = 3;
   constexpr uint32_t kOutputChannels = 2;
 
-  auto elements = initRandomFilterData<TypeParam, kHeight, kWidth, kInputChannels, kOutputChannels>();
+  auto elements = core::test::getRandomVector<TypeParam>(kHeight * kWidth * kInputChannels * kOutputChannels);
   using TestFilter = core::Filter<TypeParam, kHeight, kWidth, kInputChannels, kOutputChannels>;
   TestFilter f(elements);
 
@@ -91,7 +74,7 @@ TYPED_TEST(FilterTestFixture, WriteAt) {
   constexpr uint32_t kInputChannels = 3;
   constexpr uint32_t kOutputChannels = 2;
 
-  auto elements = initRandomFilterData<TypeParam, kHeight, kWidth, kInputChannels, kOutputChannels>();
+  auto elements = core::test::getRandomVector<TypeParam>(kHeight * kWidth * kInputChannels * kOutputChannels);
   using TestFilter = core::Filter<TypeParam, kHeight, kWidth, kInputChannels, kOutputChannels>;
   TestFilter f(elements);
 

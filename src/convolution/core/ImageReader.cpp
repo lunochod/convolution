@@ -14,7 +14,7 @@ namespace core {
 /// \param ic (const uint32_t) channel of the pixel in the image
 /// \param fx (const uint32_t) x-position in the filter
 /// \param fy (const uint32_t) y-position in the filter
-uint32_t ImageReader::calcColumnBufferOffset(const IFilter &filter, const uint32_t ix, const uint32_t iy, const uint32_t ic, const uint32_t fx, const uint32_t fy) const {
+uint32_t ImageReader::calcColumnBufferOffset(const IFilter<uint8_t> &filter, const uint32_t ix, const uint32_t iy, const uint32_t ic, const uint32_t fx, const uint32_t fy) const {
   const uint32_t pixelIndex = width() * iy + ix;
   const uint32_t filterSize = filter.width() * filter.height();
   return pixelIndex * filterSize * channels() + ic * filterSize + filter.width() * fy + fx;
@@ -69,7 +69,7 @@ bool ImageReader::read(const fs::path &path) {
 /// Read Complexity  : O( sizeof(Image) )
 /// Write Complexity : O( sizeof(Image) x sizeof(Filter) )
 ///
-bool ImageReader::img2col(const IFilter &filter) {
+bool ImageReader::img2col(const IFilter<uint8_t> &filter) {
   if (imgBufferPtr->empty()) {
     spdlog::error("Image buffer is empty, failed to initialize column buffer.");
     return false;

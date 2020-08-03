@@ -10,19 +10,29 @@
 namespace convolution {
 namespace core {
 
+template <typename T>
 class IFilter {
  public:
   virtual ~IFilter(){};
   virtual uint32_t height() const = 0;
   virtual uint32_t width() const = 0;
+  virtual uint32_t numInputChannels() const = 0;
+  virtual uint32_t numOutputChannels() const = 0;
+
   virtual uint32_t leftPadding() const = 0;
   virtual uint32_t rightPadding() const = 0;
   virtual uint32_t topPadding() const = 0;
   virtual uint32_t bottomPadding() const = 0;
+
+  virtual T *getFilterBuffer() = 0;
+  virtual const T *getFilterBuffer() const = 0;
+
+  virtual T *getColumnBuffer() = 0;
+  virtual const T *getColumnBuffer() const = 0;
 };
 
 template <typename T, uint32_t kHeight, uint32_t kWidth, uint32_t kInputChannels = 1, uint32_t kOutputChannels = 1>
-class Filter : public IFilter {
+class Filter : public IFilter<T> {
  public:
   using StorageT = std::vector<T>;
   using StoragePtr = std::shared_ptr<StorageT>;
@@ -56,6 +66,8 @@ class Filter : public IFilter {
 
   virtual uint32_t height() const override { return kHeight; }
   virtual uint32_t width() const override { return kWidth; }
+  virtual uint32_t numInputChannels() const override { return kInputChannels; }
+  virtual uint32_t numOutputChannels() const override { return kInputChannels; }
 
   virtual uint32_t leftPadding() const override { return (kWidth - 1) / 2; }
   virtual uint32_t rightPadding() const override { return (kWidth - 1) / 2; }
