@@ -2,8 +2,8 @@
 #define CONVOLUTION_CORE_CONVOLVER_H
 
 #include <convolution/core/Filter.h>
-#include <convolution/core/ImageReader.h>
 #include <convolution/core/logging.h>
+#include <convolution/io/Image.h>
 
 #include <vector>
 
@@ -12,7 +12,7 @@ namespace core {
 
 class Convolver {
   std::shared_ptr<IFilter<uint8_t>> filterPtr;
-  ImageReader io;
+  io::Image io;
   std::vector<uint8_t> outputBuffer;
 
  public:

@@ -1,7 +1,7 @@
-#include <convolution/core/ImageReader.h>
+#include <convolution/io/Image.h>
 
 namespace convolution {
-namespace core {
+namespace io {
 
 /// \brief Calculate an offset into the column buffer using image and filter coordinates
 /// The layout of the column buffer format follows: http://15418.courses.cs.cmu.edu/fall2017/lecture/dnn/slide_023
@@ -14,7 +14,7 @@ namespace core {
 /// \param ic (const uint32_t) channel of the pixel in the image
 /// \param fx (const uint32_t) x-position in the filter
 /// \param fy (const uint32_t) y-position in the filter
-uint32_t ImageReader::calcColumnBufferOffset(const IFilter<uint8_t> &filter, const uint32_t ix, const uint32_t iy, const uint32_t ic, const uint32_t fx, const uint32_t fy) const {
+uint32_t Image::calcColumnBufferOffset(const core::IFilter<uint8_t> &filter, const uint32_t ix, const uint32_t iy, const uint32_t ic, const uint32_t fx, const uint32_t fy) const {
   const uint32_t pixelIndex = width() * iy + ix;
   const uint32_t filterSize = filter.width() * filter.height();
   return pixelIndex * filterSize * channels() + ic * filterSize + filter.width() * fy + fx;
@@ -27,12 +27,12 @@ uint32_t ImageReader::calcColumnBufferOffset(const IFilter<uint8_t> &filter, con
 /// \param ix (const uint32_t) x-position of the pixel in the image
 /// \param iy (const uint32_t) y-position of the pixel in the image
 /// \param ic (const uint32_t) channel of the pixel in the image
-uint32_t ImageReader::calcImageBufferOffset(const uint32_t ix, const uint32_t iy, const uint32_t channel) const {
+uint32_t Image::calcImageBufferOffset(const uint32_t ix, const uint32_t iy, const uint32_t channel) const {
   return pixels() * channel + width() * iy + ix;
 }
 
 /// \brief read image at the path provided into the image buffer
-bool ImageReader::read(const fs::path &path) {
+bool Image::read(const fs::path &path) {
   if (!fs::exists(path)) {
     spdlog::error("File {} doesn't exist.", path.c_str());
     return false;
@@ -69,7 +69,7 @@ bool ImageReader::read(const fs::path &path) {
 /// Read Complexity  : O( sizeof(Image) )
 /// Write Complexity : O( sizeof(Image) x sizeof(Filter) )
 ///
-bool ImageReader::img2col(const IFilter<uint8_t> &filter) {
+bool Image::img2col(const core::IFilter<uint8_t> &filter) {
   if (imgBufferPtr->empty()) {
     spdlog::error("Image buffer is empty, failed to initialize column buffer.");
     return false;
@@ -120,5 +120,5 @@ bool ImageReader::img2col(const IFilter<uint8_t> &filter) {
   return true;
 }
 
-}  // namespace core
+}  // namespace io
 }  // namespace convolution

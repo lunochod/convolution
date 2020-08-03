@@ -1,5 +1,5 @@
-#ifndef CONVOLUTION_CORE_IMAGEREADER_H
-#define CONVOLUTION_CORE_IMAGEREADER_H
+#ifndef CONVOLUTION_IO_IMAGE_H
+#define CONVOLUTION_IO_IMAGE_H
 
 #include <convolution/core/Filter.h>
 #include <convolution/core/logging.h>
@@ -14,11 +14,11 @@ using namespace cimg_library;
 namespace fs = std::filesystem;
 
 namespace convolution {
-namespace core {
+namespace io {
 
-/// \class ImageReader
+/// \class Image
 /// \brief Read and image from disk and convert it into column buffer format
-class ImageReader {
+class Image {
  public:
   using StorageT = std::vector<uint8_t>;
   using StoragePtr = std::shared_ptr<StorageT>;
@@ -31,8 +31,8 @@ class ImageReader {
   StoragePtr colBufferPtr = nullptr;  ///< column buffer in row-major format
 
  public:
-  bool read(const fs::path &path);               ///< read image at path into image buffer
-  bool img2col(const IFilter<uint8_t> &filter);  ///< convert image in image buffer into column buffer
+  bool read(const fs::path &path);                     ///< read image at path into image buffer
+  bool img2col(const core::IFilter<uint8_t> &filter);  ///< convert image in image buffer into column buffer
 
   uint32_t width() const { return imgWidth; };
   uint32_t height() const { return imgHeight; };
@@ -45,10 +45,10 @@ class ImageReader {
   uint32_t calcImageBufferOffset(const uint32_t ix, const uint32_t iy, const uint32_t channel) const;
 
   /// address calculation into the column buffer
-  uint32_t calcColumnBufferOffset(const IFilter<uint8_t> &filter, const uint32_t ix, const uint32_t iy, const uint32_t ic, const uint32_t fx, const uint32_t fy) const;
+  uint32_t calcColumnBufferOffset(const core::IFilter<uint8_t> &filter, const uint32_t ix, const uint32_t iy, const uint32_t ic, const uint32_t fx, const uint32_t fy) const;
 };
 
-}  // namespace core
+}  // namespace io
 }  // namespace convolution
 
-#endif  // CONVOLUTION_CORE_IMAGEREADER_H
+#endif  // CONVOLUTION_IO_IMAGE_H

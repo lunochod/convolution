@@ -30,5 +30,6 @@ TEST(Convolution, Instantiate) {
 
   core::Convolver conv(filter);
 
-  conv("../images/Lenna.png");
+  fs::path p = "@CONVOLUTION_HOME@/images/Grace.jpg";
+  conv(p);
 }

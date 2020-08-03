@@ -5,7 +5,10 @@ namespace convolution {
 namespace core {
 
 void Convolver::operator()(const fs::path &path) {
-  io.read(path);
+  if (!io.read(path)) {
+    spdlog::error("Image file {} not found.", path.c_str());
+    return;
+  }
   io.img2col(*filterPtr);
 
   uint8_t *colBuffer = io.getColumnBuffer()->data();

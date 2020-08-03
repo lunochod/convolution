@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 // clang-format on
 
-#include <convolution/core/ImageReader.h>
+#include <convolution/io/Image.h>
 #include <convolution/core/Filter.h>
 #include <convolution/core/logging.h>
 
@@ -30,7 +30,7 @@ CImg<uint8_t> createTestImage(uint32_t height, uint32_t width) {
 
 }  // namespace
 
-TEST(ImageReaderTest, TestImage) {
+TEST(ImageTest, TestImage) {
   const uint32_t imgWidth = 17;
   const uint32_t imgHeight = 13;
   auto img = createTestImage(imgHeight, imgWidth);
@@ -45,17 +45,17 @@ TEST(ImageReaderTest, TestImage) {
   img.save("TestImage.bmp");
 }
 
-TEST(ImageReaderTest, Read) {
+TEST(ImageTest, Read) {
   const uint32_t imgWidth = 17;
   const uint32_t imgHeight = 13;
   auto img = createTestImage(imgHeight, imgWidth);
   img.save("TestImage.bmp");
 
-  core::ImageReader image{};
+  io::Image image{};
   ASSERT_TRUE(image.read("TestImage.bmp"));
 }
 
-TEST(ImageReaderTest, ColumnBuffer) {
+TEST(ImageTest, ColumnBuffer) {
   // setup test image
   const uint32_t imgWidth = 17;
   const uint32_t imgHeight = 13;
@@ -71,16 +71,16 @@ TEST(ImageReaderTest, ColumnBuffer) {
   TestFilter filter;
 
   // use image reader to process test image and create column buffer
-  core::ImageReader image{};
+  io::Image image{};
   ASSERT_TRUE(image.read("TestImage.bmp"));
   ASSERT_TRUE(image.img2col(filter));
-  core::ImageReader::StorageT colBuffer = *(image.getColumnBuffer());
+  io::Image::StorageT colBuffer = *(image.getColumnBuffer());
 
   // read the test image directly to create the comparison data
   CImg<uint8_t> cimg("TestImage.bmp");
 
   // the patch will contain the image data that covers the filter area
-  core::ImageReader::StorageT patch(fHeight * fWidth);
+  io::Image::StorageT patch(fHeight * fWidth);
   uint32_t patchIdx = 0;
   int32_t qx = 0;
   int32_t qy = 0;

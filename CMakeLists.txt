@@ -49,4 +49,9 @@ find_package(benchmark REQUIRED)
 include(CTest)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
 
+# download test image from wikipedia
+file(DOWNLOAD "https://commons.wikimedia.org/wiki/File:Commodore_Grace_M._Hopper,_USN_(covered).jpg" ${PROJECT_SOURCE_DIR}/images/Grace.jpg)
+
+add_definitions( -DCONVOLUTION_HOME=${PROJECT_SOURCE_DIR})
+
 add_subdirectory(src)
