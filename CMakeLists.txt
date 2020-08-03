@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
-project(Sequoia C CXX)
+project(Convolution C CXX)
 
 # Download and unpack googletest at configure time
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
