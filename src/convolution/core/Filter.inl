@@ -19,8 +19,9 @@ Filter<T, kHeight, kWidth, kInputChannels, kOutputChannels>::Filter(const Storag
     throw std::out_of_range("Filter input data size doesn't match filter dimensions");
   }
   filterBuffer = std::make_shared<StorageT>(kNumElements);
-  memcpy(this->data(), elements.data(), elements.size() * sizeof(T));
-  colBuffer = std::make_shared<StorageT>();
+  memcpy(filterBuffer->data(), elements.data(), elements.size() * sizeof(T));
+  colBuffer = std::make_shared<StorageT>(kNumElements);
+  filterToColumn();
 }
 
 template <typename T, uint32_t kHeight, uint32_t kWidth, uint32_t kInputChannels, uint32_t kOutputChannels>
@@ -35,20 +36,37 @@ Filter<T, kHeight, kWidth> Filter<T, kHeight, kWidth, kInputChannels, kOutputCha
   }
   Filter<T, kHeight, kWidth> f;
   const size_t offset = kHeight * kWidth * kInputChannels * ocIdx + kHeight * kWidth * icIdx;
-  memcpy(f.data(), this->data() + offset, kHeight * kWidth * sizeof(T));
+  memcpy(f.getFilterBuffer(), filterBuffer->data() + offset, kHeight * kWidth * sizeof(T));
   return f;
 }
 
 template <typename T, uint32_t kHeight, uint32_t kWidth, uint32_t kInputChannels, uint32_t kOutputChannels>
 T Filter<T, kHeight, kWidth, kInputChannels, kOutputChannels>::at(uint32_t hIdx, uint32_t wIdx, uint32_t icIdx, uint32_t ocIdx) const {
   const size_t idx = kHeight * kWidth * kInputChannels * ocIdx + kHeight * kWidth * icIdx + kHeight * hIdx + wIdx;
-  return data()[idx];
+  return (*filterBuffer)[idx];
 }
 
 template <typename T, uint32_t kHeight, uint32_t kWidth, uint32_t kInputChannels, uint32_t kOutputChannels>
 T &Filter<T, kHeight, kWidth, kInputChannels, kOutputChannels>::at(uint32_t hIdx, uint32_t wIdx, uint32_t icIdx, uint32_t ocIdx) {
   const size_t idx = kHeight * kWidth * kInputChannels * ocIdx + kHeight * kWidth * icIdx + kHeight * hIdx + wIdx;
-  return data()[idx];
+  return (*filterBuffer)[idx];
+}
+
+template <typename T, uint32_t kHeight, uint32_t kWidth, uint32_t kInputChannels, uint32_t kOutputChannels>
+void Filter<T, kHeight, kWidth, kInputChannels, kOutputChannels>::filterToColumn() {
+  // the operation is a transpose on a non-square matrix,
+  // for simplicity we use element-wise operation using address lookup
+  for (uint32_t oc = 0; oc < kOutputChannels; ++oc) {
+    for (uint32_t ic = 0; ic < kInputChannels; ++ic) {
+      for (uint32_t fy = 0; fy < kHeight; ++fy) {
+        for (uint32_t fx = 0; fx < kWidth; ++fx) {
+          uint32_t read = calcFilterBufferOffset(fx, fy, ic, oc);
+          uint32_t write = calcColumnBufferOffset(fx, fy, ic, oc);
+          (*colBuffer)[write] = (*filterBuffer)[read];
+        }
+      }
+    }
+  }
 }
 
 }  // namespace core

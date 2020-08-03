@@ -58,7 +58,7 @@ TYPED_TEST(FilterTestFixture, Get) {
     for (uint32_t icIdx = 0; icIdx < kInputChannels; ++icIdx) {
       auto g = f.get(icIdx, ocIdx);
       const size_t offset = kHeight * kWidth * kInputChannels * ocIdx + kHeight * kWidth * icIdx;
-      ASSERT_EQ(memcmp(g.data(), f.data() + offset, kWidth * kHeight * sizeof(TypeParam)), 0);
+      ASSERT_EQ(memcmp(g.getFilterBuffer(), f.getFilterBuffer() + offset, kWidth * kHeight * sizeof(TypeParam)), 0);
     }
   }
 }
@@ -78,7 +78,7 @@ TYPED_TEST(FilterTestFixture, ReadAt) {
       for (uint32_t hIdx = 0; hIdx < kHeight; ++hIdx) {
         for (uint32_t wIdx = 0; wIdx < kWidth; ++wIdx) {
           const size_t offset = kHeight * kWidth * kInputChannels * ocIdx + kHeight * kWidth * icIdx + kHeight * hIdx + wIdx;
-          ASSERT_EQ(f.data()[offset], f.at(hIdx, wIdx, icIdx, ocIdx));
+          ASSERT_EQ(f.getFilterBuffer()[offset], f.at(hIdx, wIdx, icIdx, ocIdx));
         }
       }
     }
@@ -103,6 +103,48 @@ TYPED_TEST(FilterTestFixture, WriteAt) {
           f.at(hIdx, wIdx, icIdx, ocIdx) = cnt;
           ASSERT_EQ(f.at(hIdx, wIdx, icIdx, ocIdx), cnt);
           ++cnt;
+        }
+      }
+    }
+  }
+}
+
+TYPED_TEST(FilterTestFixture, ColumnBuffer) {
+  constexpr uint32_t kHeight = 3;
+  constexpr uint32_t kWidth = 5;
+  constexpr uint32_t kInputChannels = 3;
+  constexpr uint32_t kOutputChannels = 2;
+
+  using TestFilter = core::Filter<TypeParam, kHeight, kWidth, kInputChannels, kOutputChannels>;
+
+  std::vector<TypeParam> data(TestFilter::kNumElements);
+  for (uint32_t fIdx = 0; fIdx < data.size(); ++fIdx) {
+    data[fIdx] = fIdx;
+  }
+
+  TestFilter filter(data);
+
+  uint32_t cnt = 0;
+  TypeParam *filterData = filter.getFilterBuffer();
+  for (uint32_t oc = 0; oc < kOutputChannels; ++oc) {
+    for (uint32_t ic = 0; ic < kInputChannels; ++ic) {
+      for (uint32_t fy = 0; fy < kHeight; ++fy) {
+        for (uint32_t fx = 0; fx < kWidth; ++fx) {
+          uint32_t read = filter.calcFilterBufferOffset(fx, fy, ic, oc);
+          ASSERT_EQ(filterData[read], cnt++);
+        }
+      }
+    }
+  }
+
+  cnt = 0;
+  TypeParam *columnData = filter.getColumnBuffer();
+  for (uint32_t oc = 0; oc < kOutputChannels; ++oc) {
+    for (uint32_t ic = 0; ic < kInputChannels; ++ic) {
+      for (uint32_t fy = 0; fy < kHeight; ++fy) {
+        for (uint32_t fx = 0; fx < kWidth; ++fx) {
+          uint32_t read = filter.calcColumnBufferOffset(fx, fy, ic, oc);
+          ASSERT_EQ(columnData[read], cnt++);
         }
       }
     }
