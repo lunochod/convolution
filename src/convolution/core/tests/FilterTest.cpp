@@ -100,7 +100,6 @@ TYPED_TEST(FilterTestFixture, WriteAt) {
     for (uint32_t icIdx = 0; icIdx < kInputChannels; ++icIdx) {
       for (uint32_t hIdx = 0; hIdx < kHeight; ++hIdx) {
         for (uint32_t wIdx = 0; wIdx < kWidth; ++wIdx) {
-          const size_t offset = kHeight * kWidth * kInputChannels * ocIdx + kHeight * kWidth * icIdx + kHeight * hIdx + wIdx;
           f.at(hIdx, wIdx, icIdx, ocIdx) = cnt;
           ASSERT_EQ(f.at(hIdx, wIdx, icIdx, ocIdx), cnt);
           ++cnt;
