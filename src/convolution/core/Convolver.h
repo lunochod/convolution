@@ -10,6 +10,7 @@
 namespace convolution {
 namespace core {
 
+template <uint32_t P>
 class Convolver {
   std::shared_ptr<IFilter<uint8_t>> filterPtr;
   io::Image io;

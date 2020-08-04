@@ -23,6 +23,7 @@ namespace {
 }  // namespace
 
 TEST(Convolution, IdentityFilter) {
+  constexpr uint32_t P = 8;  //< hardware multiplier size
   constexpr uint32_t kHeight = 1;
   constexpr uint32_t kWidth = 1;
   constexpr uint32_t kInputChannels = 3;
@@ -43,7 +44,7 @@ TEST(Convolution, IdentityFilter) {
   std::shared_ptr<TestFilter> filter = std::make_shared<TestFilter>(elements);
 
   // create the Convolver using the previously defined random filter
-  core::Convolver conv(filter);
+  core::Convolver<P> conv(filter);
 
   // define a test image
   fs::path inputFile = fs::path(std::string(BOOST_PP_STRINGIZE(PROJECT_SOURCE_DIR))) / "images" / "Grace.jpg";
