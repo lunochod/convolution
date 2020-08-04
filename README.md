@@ -5,7 +5,7 @@ This project aims to illustrate how to use matrix-matrix multiplications to conv
 
 ## Install Required Packages
 ```bash
-sudo apt-get install build-essential cimg-dev libspdlog-dev libbenchmark-dev cmake
+sudo apt-get install build-essential cimg-dev libspdlog-dev libbenchmark-dev cmake libboost-dev libpng-dev
 ```
 
 ## Checkout the Code
