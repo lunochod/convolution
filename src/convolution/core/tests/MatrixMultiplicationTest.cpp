@@ -14,10 +14,10 @@ class MatrixMultiplicationTestFixture : public testing::Test {
 };
 
 template <typename T>
-void initRandomMatrix(const uint32_t M, const uint32_t N, T *mat) {
+void initRandomMatrix(const uint32_t M, const uint32_t N, T *mat, const T min = 0, const T max = std::numeric_limits<T>::max()) {
   std::random_device device;
   std::mt19937 generator(device());
-  std::uniform_int_distribution<T> distribution(1, 2 /*std::numeric_limits<T>::max()*/);
+  std::uniform_int_distribution<T> distribution(min, max);
 
   for (uint32_t m = 0; m < M; ++m) {
     for (uint32_t n = 0; n < N; ++n) {
@@ -146,8 +146,8 @@ TYPED_TEST(MatrixMultiplicationTestFixture, HardwareMultiplierMulIdentity) {
   std::vector<TypeParam> c_test(M * N);
   std::vector<TypeParam> c_reference(M * N);
 
-  initRandomMatrix<TypeParam>(M, K, a.data());
-  initRandomMatrix<TypeParam>(K, N, b.data());
+  initRandomMatrix<TypeParam>(M, K, a.data(), 1, 2);  //< init random matrix will values 1 or 2 to avoid overflow
+  initRandomMatrix<TypeParam>(K, N, b.data(), 1, 2);  //< init random matrix will values 1 or 2 to avoid overflow
 
   memset(c_test.data(), 0, c_test.size() * sizeof(TypeParam));
   memset(c_reference.data(), 0, c_reference.size() * sizeof(TypeParam));

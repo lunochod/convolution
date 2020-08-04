@@ -88,6 +88,8 @@ bool mult(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
     const uint32_t a_height = M;
     const uint32_t b_width = N;
 
+    // the partial results get accumulated in the output matrix c
+    // this may result in overflows
     for (uint32_t p = P; p <= K; p += P) {
       res &= mult<T, cOrder, aOrder, bOrder, P, useOverflowDetection>(M, N, P, c, a1, b1);
       a1 += a_height * P;
