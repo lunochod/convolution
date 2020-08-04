@@ -52,6 +52,7 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
 add_compile_definitions(PROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR})
 
 # download test image from wikipedia
+file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/images)
 file(DOWNLOAD "https://upload.wikimedia.org/wikipedia/commons/a/ad/Commodore_Grace_M._Hopper%2C_USN_%28covered%29.jpg" ${PROJECT_SOURCE_DIR}/images/Grace.jpg)
 
 add_subdirectory(src)
