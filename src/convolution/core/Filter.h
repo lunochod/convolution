@@ -67,7 +67,7 @@ class Filter : public IFilter<T> {
   virtual uint32_t height() const override { return kHeight; }
   virtual uint32_t width() const override { return kWidth; }
   virtual uint32_t numInputChannels() const override { return kInputChannels; }
-  virtual uint32_t numOutputChannels() const override { return kInputChannels; }
+  virtual uint32_t numOutputChannels() const override { return kOutputChannels; }
 
   virtual uint32_t leftPadding() const override { return (kWidth - 1) / 2; }
   virtual uint32_t rightPadding() const override { return (kWidth - 1) / 2; }
