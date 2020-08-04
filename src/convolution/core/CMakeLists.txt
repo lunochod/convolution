@@ -12,6 +12,11 @@ target_link_libraries(MatrixMultiplicationTest gtest_main)
 add_test(core::MatrixMultiplicationTest MatrixMultiplicationTest)
 add_dependencies(check MatrixMultiplicationTest)
 
+add_executable(MatrixTransposeTest ${Convolution_SOURCE_DIR}/src/convolution/core/tests/MatrixTransposeTest.cpp)
+target_link_libraries(MatrixTransposeTest gtest_main)
+add_test(core::MatrixTransposeTest MatrixTransposeTest)
+add_dependencies(check MatrixTransposeTest)
+
 add_executable(FilterTest ${Convolution_SOURCE_DIR}/src/convolution/core/tests/FilterTest.cpp)
 target_link_libraries(FilterTest gtest_main)
 add_test(core::FilterTest FilterTest)
