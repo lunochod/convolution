@@ -1,4 +1,7 @@
+#include <convolution/core/MatrixTranspose.h>
 #include <convolution/io/Image.h>
+
+#include <algorithm>
 
 namespace convolution {
 namespace io {
@@ -92,6 +95,7 @@ bool Image::write(const fs::path &path, const uint32_t oc) const {
 /// Read Complexity  : O( sizeof(Image) )
 /// Write Complexity : O( sizeof(Image) x sizeof(Filter) )
 ///
+template <core::MatrixOrder order>
 bool Image::img2col(const core::IFilter<uint8_t> &filter) {
   if (imgBufferPtr->empty()) {
     spdlog::error("Image buffer is empty, failed to initialize column buffer.");
@@ -146,8 +150,17 @@ bool Image::img2col(const core::IFilter<uint8_t> &filter) {
     }
   }
 
+  if constexpr (order == core::MatrixOrder::kColumnMajor) {
+    const uint32_t N = filterWidth * filterHeight * channels();
+    const uint32_t M = pixels();
+    core::transpose<uint8_t, core::MatrixOrder::kRowMajor>(M, N, colBuffer.data(), transformBuffer.data());
+  }
+
   return true;
 }
+
+template bool Image::img2col<core::MatrixOrder::kRowMajor>(const core::IFilter<uint8_t> &);
+template bool Image::img2col<core::MatrixOrder::kColumnMajor>(const core::IFilter<uint8_t> &);
 
 }  // namespace io
 }  // namespace convolution

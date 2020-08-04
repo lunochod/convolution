@@ -2,6 +2,7 @@
 #define CONVOLUTION_IO_IMAGE_H
 
 #include <convolution/core/Filter.h>
+#include <convolution/core/MatrixMultiplication.h>
 #include <convolution/core/logging.h>
 
 #include <cstdint>
@@ -34,7 +35,9 @@ class Image {
  public:
   bool read(const fs::path &path);                            ///< read image at path into image buffer
   bool write(const fs::path &path, const uint32_t oc) const;  ///< write transform buffer to image specified at path
-  bool img2col(const core::IFilter<uint8_t> &filter);         ///< convert image in image buffer into column buffer
+
+  template <core::MatrixOrder order = core::MatrixOrder::kRowMajor>
+  bool img2col(const core::IFilter<uint8_t> &filter);  ///< convert image in image buffer into column buffer
 
   uint32_t width() const { return imgWidth; };
   uint32_t height() const { return imgHeight; };
