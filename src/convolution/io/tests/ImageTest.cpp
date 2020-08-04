@@ -6,6 +6,8 @@
 #include <convolution/core/Filter.h>
 #include <convolution/core/logging.h>
 
+#include <boost/preprocessor/stringize.hpp>
+
 #include "CImg.h"
 
 using namespace cimg_library;
@@ -42,17 +44,20 @@ TEST(ImageTest, TestImage) {
     }
   }
 
-  img.save("TestImage.bmp");
+  fs::path p = fs::path(std::string(BOOST_PP_STRINGIZE(PROJECT_SOURCE_DIR))) / "images" / "TestImage.bmp";
+  img.save(p.c_str());
 }
 
 TEST(ImageTest, Read) {
   const uint32_t imgWidth = 17;
   const uint32_t imgHeight = 13;
   auto img = createTestImage(imgHeight, imgWidth);
-  img.save("TestImage.bmp");
+
+  fs::path p = fs::path(std::string(BOOST_PP_STRINGIZE(PROJECT_SOURCE_DIR))) / "images" / "TestImage.bmp";
+  img.save(p.c_str());
 
   io::Image image{};
-  ASSERT_TRUE(image.read("TestImage.bmp"));
+  ASSERT_TRUE(image.read(p));
 }
 
 TEST(ImageTest, ColumnBuffer) {
@@ -60,7 +65,9 @@ TEST(ImageTest, ColumnBuffer) {
   const uint32_t imgWidth = 17;
   const uint32_t imgHeight = 13;
   auto img = createTestImage(imgHeight, imgWidth);
-  img.save("TestImage.bmp");
+
+  fs::path p = fs::path(std::string(BOOST_PP_STRINGIZE(PROJECT_SOURCE_DIR))) / "images" / "TestImage.bmp";
+  img.save(p.c_str());
 
   // setup test filter
   constexpr uint32_t fHeight = 3;
@@ -72,12 +79,12 @@ TEST(ImageTest, ColumnBuffer) {
 
   // use image reader to process test image and create column buffer
   io::Image image{};
-  ASSERT_TRUE(image.read("TestImage.bmp"));
+  ASSERT_TRUE(image.read(p));
   ASSERT_TRUE(image.img2col(filter));
   io::Image::StorageT colBuffer = *(image.getColumnBuffer());
 
   // read the test image directly to create the comparison data
-  CImg<uint8_t> cimg("TestImage.bmp");
+  CImg<uint8_t> cimg(p.c_str());
 
   // the patch will contain the image data that covers the filter area
   io::Image::StorageT patch(fHeight * fWidth);
