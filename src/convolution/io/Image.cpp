@@ -52,6 +52,29 @@ bool Image::read(const fs::path &path) {
   return true;
 }
 
+/// \brief write transform buffer image to the path provided
+bool Image::write(const fs::path &path, const uint32_t oc) const {
+  CImg<uint8_t> image(width(), height(), 1, 1);
+
+  const uint32_t numOutputChannels = transformBufferPtr->size() / (width() * height());
+
+  auto addr = [&](const uint32_t img_x, const uint32_t img_y, const uint32_t oc) {
+    const uint32_t pixelIndex = width() * img_y + img_x;
+    return pixelIndex * numOutputChannels + oc;
+  };
+
+  for (uint32_t img_y = 0; img_y < height(); ++img_y) {
+    for (uint32_t img_x = 0; img_x < width(); ++img_x) {
+      uint32_t read = addr(img_x, img_y, oc);
+      image(img_x, img_y, 0, 0) = (*transformBufferPtr)[read];
+    }
+  }
+
+  image.save(path.c_str());
+  spdlog::info("Write image {} {}x{}x{} {} Byte", path.c_str(), width(), height(), 1, transformBufferPtr->size() / numOutputChannels);
+  return true;
+}
+
 /// \brief convert image to column buffer format
 /// The layout of the column buffer format follows: http://15418.courses.cs.cmu.edu/fall2017/lecture/dnn/slide_023
 ///
@@ -92,6 +115,12 @@ bool Image::img2col(const core::IFilter<uint8_t> &filter) {
   colBufferPtr = std::make_shared<StorageT>(filterWidth * filterHeight * pixels() * channels());
   StorageT &colBuffer = *colBufferPtr;
   memset(colBuffer.data(), 0, colBuffer.size());
+
+  // resize and clear the transform buffer
+  transformBufferPtr.reset();
+  transformBufferPtr = std::make_shared<StorageT>(pixels() * filter.numOutputChannels());
+  StorageT &transformBuffer = *transformBufferPtr;
+  memset(transformBuffer.data(), 0, transformBuffer.size());
 
   // iterate over each channel
   for (uint32_t img_c = 0; img_c < imgChannels; ++img_c) {
