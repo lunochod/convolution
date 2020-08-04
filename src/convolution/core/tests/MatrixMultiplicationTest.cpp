@@ -17,11 +17,11 @@ template <typename T>
 void initRandomMatrix(const uint32_t M, const uint32_t N, T *mat) {
   std::random_device device;
   std::mt19937 generator(device());
-  std::uniform_int_distribution<T> distribution(1, std::numeric_limits<T>::max());
+  std::uniform_int_distribution<T> distribution(1, 2 /*std::numeric_limits<T>::max()*/);
 
   for (uint32_t m = 0; m < M; ++m) {
     for (uint32_t n = 0; n < N; ++n) {
-      mat[m * M + n] = distribution(generator);
+      mat[m * N + n] = distribution(generator);
     }
   }
 }
@@ -60,7 +60,7 @@ TYPED_TEST(MatrixMultiplicationTestFixture, MulZero) {
   {
     memset(a.data(), 0, a.size() * sizeof(TypeParam));
     memset(b.data(), 1, b.size() * sizeof(TypeParam));
-    memset(c.data(), 2, c.size() * sizeof(TypeParam));
+    memset(c.data(), 0, c.size() * sizeof(TypeParam));
 
     bool didNotOverflow = core::gemm<TypeParam, core::MatrixOrder::kRowMajor>(M, N, K, c.data(), a.data(), b.data());
     ASSERT_TRUE(didNotOverflow);
@@ -74,7 +74,7 @@ TYPED_TEST(MatrixMultiplicationTestFixture, MulZero) {
   {
     memset(a.data(), 1, a.size() * sizeof(TypeParam));
     memset(b.data(), 0, b.size() * sizeof(TypeParam));
-    memset(c.data(), 2, c.size() * sizeof(TypeParam));
+    memset(c.data(), 0, c.size() * sizeof(TypeParam));
 
     bool didNotOverflow = core::gemm<TypeParam, core::MatrixOrder::kRowMajor>(M, N, K, c.data(), a.data(), b.data());
     ASSERT_TRUE(didNotOverflow);
@@ -133,4 +133,32 @@ TYPED_TEST(MatrixMultiplicationTestFixture, DetectOverflow) {
   memset(c.data(), 0, c.size() * sizeof(TypeParam));
   bool didNotOverflow = core::gemm<TypeParam, core::MatrixOrder::kRowMajor, true>(M, M, M, c.data(), a.data(), b.data());
   ASSERT_FALSE(didNotOverflow);
+}
+
+TYPED_TEST(MatrixMultiplicationTestFixture, HardwareMultiplierMulIdentity) {
+  constexpr uint32_t M = 13;
+  constexpr uint32_t N = 17;
+  constexpr uint32_t K = 14;
+  constexpr uint32_t P = 4;
+
+  std::vector<TypeParam> a(M * K);
+  std::vector<TypeParam> b(K * N);
+  std::vector<TypeParam> c_test(M * N);
+  std::vector<TypeParam> c_reference(M * N);
+
+  initRandomMatrix<TypeParam>(M, K, a.data());
+  initRandomMatrix<TypeParam>(K, N, b.data());
+
+  memset(c_test.data(), 0, c_test.size() * sizeof(TypeParam));
+  memset(c_reference.data(), 0, c_reference.size() * sizeof(TypeParam));
+
+  // create the reference multiplication using core::gemm()
+  bool referenceDidNotOverflow = core::gemm<TypeParam, core::MatrixOrder::kRowMajor, core::MatrixOrder::kColumnMajor, core::MatrixOrder::kRowMajor, true>(M, N, K, c_reference.data(), a.data(), b.data());
+  ASSERT_TRUE(referenceDidNotOverflow);
+
+  // create the test multiplication using core::mult()
+  bool testDidNotOverflow = core::mult<TypeParam, core::MatrixOrder::kRowMajor, core::MatrixOrder::kColumnMajor, core::MatrixOrder::kRowMajor, P, true>(M, N, K, c_test.data(), a.data(), b.data());
+  ASSERT_TRUE(testDidNotOverflow);
+
+  ASSERT_EQ(memcmp(c_test.data(), c_reference.data(), c_test.size() * sizeof(TypeParam)), 0);
 }
