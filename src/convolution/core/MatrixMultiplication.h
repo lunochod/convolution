@@ -30,7 +30,7 @@ bool gemm(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
         if constexpr (bOrder == MatrixOrder::kRowMajor) {
           b_kn = b[k * N + n];
         } else {
-          b_kn = b[n * M + k];
+          b_kn = b[n * K + k];
         }
 
         if constexpr (useOverflowDetection) {

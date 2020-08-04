@@ -1,4 +1,5 @@
 #include <convolution/core/MatrixMultiplication.h>
+#include <convolution/core/MatrixTranspose.h>
 #include <convolution/core/logging.h>
 #include <gtest/gtest.h>
 
@@ -133,6 +134,37 @@ TYPED_TEST(MatrixMultiplicationTestFixture, DetectOverflow) {
   memset(c.data(), 0, c.size() * sizeof(TypeParam));
   bool didNotOverflow = core::gemm<TypeParam, core::MatrixOrder::kRowMajor, true>(M, M, M, c.data(), a.data(), b.data());
   ASSERT_FALSE(didNotOverflow);
+}
+
+TYPED_TEST(MatrixMultiplicationTestFixture, kColumnMajor) {
+  constexpr uint32_t M = 3;  //13;
+  constexpr uint32_t N = 4;  //17;
+  constexpr uint32_t K = 5;  //14;
+
+  std::vector<TypeParam> a(M * K);
+  std::vector<TypeParam> b(K * N);
+  std::vector<TypeParam> c_test(M * N);
+  std::vector<TypeParam> c_reference(M * N);
+
+  initRandomMatrix<TypeParam>(M, K, a.data(), 1, 2);  //< init random matrix will values 1 or 2 to avoid overflow
+  initRandomMatrix<TypeParam>(K, N, b.data(), 1, 2);  //< init random matrix will values 1 or 2 to avoid overflow
+
+  memset(c_test.data(), 0, c_test.size() * sizeof(TypeParam));
+  memset(c_reference.data(), 0, c_reference.size() * sizeof(TypeParam));
+
+  // create the reference multiplication using core::gemm()
+  bool referenceDidNotOverflow = core::gemm<TypeParam, core::MatrixOrder::kRowMajor, core::MatrixOrder::kRowMajor, core::MatrixOrder::kRowMajor, true>(M, N, K, c_reference.data(), a.data(), b.data());
+  ASSERT_TRUE(referenceDidNotOverflow);
+
+  // tranpose a
+  std::vector<TypeParam> a_buffer(a.size());
+  core::transpose<TypeParam, core::MatrixOrder::kRowMajor>(M, K, a.data(), a_buffer.data());
+
+  // create the test multiplication using core::mult()
+  bool testDidNotOverflow = core::gemm<TypeParam, core::MatrixOrder::kRowMajor, core::MatrixOrder::kColumnMajor, core::MatrixOrder::kRowMajor, true>(M, N, K, c_test.data(), a.data(), b.data());
+  ASSERT_TRUE(testDidNotOverflow);
+
+  ASSERT_EQ(memcmp(c_test.data(), c_reference.data(), c_test.size() * sizeof(TypeParam)), 0);
 }
 
 TYPED_TEST(MatrixMultiplicationTestFixture, HardwareMultiplierMulIdentity) {
