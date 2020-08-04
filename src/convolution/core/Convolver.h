@@ -13,7 +13,6 @@ namespace core {
 class Convolver {
   std::shared_ptr<IFilter<uint8_t>> filterPtr;
   io::Image io;
-  std::vector<uint8_t> outputBuffer;
 
  public:
   explicit Convolver(std::shared_ptr<IFilter<uint8_t>> f) : filterPtr(f), io() {}
