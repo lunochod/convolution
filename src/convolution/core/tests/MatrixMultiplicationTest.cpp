@@ -38,7 +38,7 @@ TYPED_TEST(MatrixMultiplicationTestFixture, MulZero) {
 
     for (uint32_t m = 0; m < M; ++m) {
       for (uint32_t n = 0; n < N; ++n) {
-        ASSERT_EQ(c[m * N + n], 0);
+        ASSERT_EQ(c[core::address<core::MatrixOrder::kRowMajor>(M, N, m, n)], 0);
       }
     }
   }
@@ -52,7 +52,7 @@ TYPED_TEST(MatrixMultiplicationTestFixture, MulZero) {
 
     for (uint32_t m = 0; m < M; ++m) {
       for (uint32_t n = 0; n < N; ++n) {
-        ASSERT_EQ(c[m * N + n], 0);
+        ASSERT_EQ(c[core::address<core::MatrixOrder::kRowMajor>(M, N, m, n)], 0);
       }
     }
   }
@@ -107,9 +107,9 @@ TYPED_TEST(MatrixMultiplicationTestFixture, DetectOverflow) {
 }
 
 TYPED_TEST(MatrixMultiplicationTestFixture, kColumnMajor) {
-  constexpr uint32_t M = 3;  //13;
-  constexpr uint32_t N = 4;  //17;
-  constexpr uint32_t K = 5;  //14;
+  constexpr uint32_t M = 13;
+  constexpr uint32_t N = 17;
+  constexpr uint32_t K = 14;
 
   std::vector<TypeParam> a(M * K);
   std::vector<TypeParam> b(K * N);
@@ -122,18 +122,19 @@ TYPED_TEST(MatrixMultiplicationTestFixture, kColumnMajor) {
   memset(c_test.data(), 0, c_test.size() * sizeof(TypeParam));
   memset(c_reference.data(), 0, c_reference.size() * sizeof(TypeParam));
 
-  // create the reference multiplication using core::gemm()
+  // create the reference multiplication using core::gemm() where all matrices use kRowMajor
   bool referenceDidNotOverflow = core::gemm<TypeParam, core::MatrixOrder::kRowMajor, core::MatrixOrder::kRowMajor, core::MatrixOrder::kRowMajor, true>(M, N, K, c_reference.data(), a.data(), b.data());
   ASSERT_TRUE(referenceDidNotOverflow);
 
-  // tranpose a
+  // tranpose matrix a to be in kColumnMajor format
   std::vector<TypeParam> a_buffer(a.size());
   core::transpose<TypeParam, core::MatrixOrder::kRowMajor>(M, K, a.data(), a_buffer.data());
 
-  // create the test multiplication using core::mult()
+  // create the test multiplication using core::gemm() now using a in kColMajor format
   bool testDidNotOverflow = core::gemm<TypeParam, core::MatrixOrder::kRowMajor, core::MatrixOrder::kColumnMajor, core::MatrixOrder::kRowMajor, true>(M, N, K, c_test.data(), a.data(), b.data());
   ASSERT_TRUE(testDidNotOverflow);
 
+  // the results of both multiplications must be identical
   ASSERT_EQ(memcmp(c_test.data(), c_reference.data(), c_test.size() * sizeof(TypeParam)), 0);
 }
 

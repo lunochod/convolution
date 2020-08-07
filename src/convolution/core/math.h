@@ -13,6 +13,15 @@ enum class MatrixOrder {
   kColumnMajor
 };
 
+template <MatrixOrder order>
+uint64_t address(uint32_t M, uint32_t N, uint32_t m, uint32_t n) {
+  if constexpr (order == core::MatrixOrder::kRowMajor) {
+    return N * m + n;
+  } else {
+    return M * n + m;
+  }
+}
+
 template <typename T, MatrixOrder cOrder, MatrixOrder aOrder, MatrixOrder bOrder, bool useOverflowDetection = false>
 bool gemm(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
   T a_mk = 0;
@@ -22,16 +31,8 @@ bool gemm(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
     for (uint32_t n = 0; n < N; ++n) {
       T sum = (T)0;
       for (uint32_t k = 0; k < K; ++k) {
-        if constexpr (aOrder == MatrixOrder::kRowMajor) {
-          a_mk = a[m * K + k];
-        } else {
-          a_mk = a[k * M + m];
-        }
-        if constexpr (bOrder == MatrixOrder::kRowMajor) {
-          b_kn = b[k * N + n];
-        } else {
-          b_kn = b[n * K + k];
-        }
+        a_mk = a[address<aOrder>(M, K, m, k)];
+        b_kn = b[address<bOrder>(K, N, k, n)];
 
         if constexpr (useOverflowDetection) {
           T overflow = 0;
@@ -45,23 +46,13 @@ bool gemm(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
         sum += a_mk * b_kn;
       }
 
-      if constexpr (cOrder == MatrixOrder::kRowMajor) {
-        if constexpr (useOverflowDetection) {
-          T overflow = 0;
-          if (__builtin_add_overflow(c[m * N + n], sum, &overflow)) {
-            return false;
-          }
+      if constexpr (useOverflowDetection) {
+        T overflow = 0;
+        if (__builtin_add_overflow(c[address<cOrder>(M, N, m, n)], sum, &overflow)) {
+          return false;
         }
-        c[m * N + n] += sum;
-      } else {
-        if constexpr (useOverflowDetection) {
-          T overflow = 0;
-          if (__builtin_add_overflow(c[n * M + m], sum, &overflow)) {
-            return false;
-          }
-        }
-        c[n * M + m] += sum;
       }
+      c[address<cOrder>(M, N, m, n)] += sum;
     }
   }
 
@@ -114,16 +105,12 @@ bool mult(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
 /// faster algorithms exist
 template <typename T, MatrixOrder order>
 void transpose(uint32_t M, uint32_t N, T *data, T *buffer) {
-  if constexpr (order == core::MatrixOrder::kRowMajor) {
-    for (uint32_t m = 0; m < M; ++m) {
-      for (uint32_t n = 0; n < N; ++n) {
-        buffer[n * M + m] = data[m * N + n];
-      }
-    }
-  } else {
+  for (uint32_t m = 0; m < M; ++m) {
     for (uint32_t n = 0; n < N; ++n) {
-      for (uint32_t m = 0; m < M; ++m) {
-        buffer[m * N + n] = data[n * M + m];
+      if constexpr (order == core::MatrixOrder::kRowMajor) {
+        buffer[address<core::MatrixOrder::kColumnMajor>(M, N, m, n)] = data[address<core::MatrixOrder::kRowMajor>(M, N, m, n)];
+      } else {
+        buffer[address<core::MatrixOrder::kRowMajor>(M, N, m, n)] = data[address<core::MatrixOrder::kColumnMajor>(M, N, m, n)];
       }
     }
   }
