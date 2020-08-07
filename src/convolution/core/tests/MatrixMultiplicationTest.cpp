@@ -1,6 +1,6 @@
-#include <convolution/core/MatrixMultiplication.h>
-#include <convolution/core/MatrixTranspose.h>
 #include <convolution/core/logging.h>
+#include <convolution/core/math.h>
+#include <convolution/core/tests/TestResources.h>
 #include <gtest/gtest.h>
 
 #include <limits>
@@ -13,36 +13,6 @@ namespace {
 template <class T>
 class MatrixMultiplicationTestFixture : public testing::Test {
 };
-
-template <typename T>
-void initRandomMatrix(const uint32_t M, const uint32_t N, T *mat, const T min = 0, const T max = std::numeric_limits<T>::max()) {
-  std::random_device device;
-  std::mt19937 generator(device());
-  std::uniform_int_distribution<T> distribution(min, max);
-
-  for (uint32_t m = 0; m < M; ++m) {
-    for (uint32_t n = 0; n < N; ++n) {
-      mat[m * N + n] = distribution(generator);
-    }
-  }
-}
-
-template <typename T>
-void initConstantMatrix(const uint32_t M, const uint32_t N, T *mat, T value) {
-  for (uint32_t m = 0; m < M; ++m) {
-    for (uint32_t n = 0; n < N; ++n) {
-      mat[m * M + n] = value;
-    }
-  }
-}
-
-template <typename T>
-void initIdentityMatrix(const uint32_t M, const uint32_t N, T *mat) {
-  memset(mat, 0, M * M * sizeof(T));
-  for (uint32_t m = 0; m < M; ++m) {
-    mat[m * M + m] = 1;
-  }
-}
 
 }  // namespace
 
@@ -95,8 +65,8 @@ TYPED_TEST(MatrixMultiplicationTestFixture, MulIdentity) {
   std::vector<TypeParam> b(M * M);
   std::vector<TypeParam> c(M * M);
 
-  initRandomMatrix<TypeParam>(M, M, a.data());
-  initIdentityMatrix<TypeParam>(M, M, b.data());
+  core::test::initRandomMatrix<TypeParam>(M, M, a.data());
+  core::test::initIdentityMatrix<TypeParam>(M, M, b.data());
 
   {
     memset(c.data(), 0, c.size() * sizeof(TypeParam));
@@ -129,8 +99,8 @@ TYPED_TEST(MatrixMultiplicationTestFixture, DetectOverflow) {
   std::vector<TypeParam> b(M * M);
   std::vector<TypeParam> c(M * M);
 
-  initConstantMatrix<TypeParam>(M, M, a.data(), std::numeric_limits<TypeParam>::max());
-  initConstantMatrix<TypeParam>(M, M, b.data(), std::numeric_limits<TypeParam>::max());
+  core::test::initConstantMatrix<TypeParam>(M, M, a.data(), std::numeric_limits<TypeParam>::max());
+  core::test::initConstantMatrix<TypeParam>(M, M, b.data(), std::numeric_limits<TypeParam>::max());
   memset(c.data(), 0, c.size() * sizeof(TypeParam));
   bool didNotOverflow = core::gemm<TypeParam, core::MatrixOrder::kRowMajor, true>(M, M, M, c.data(), a.data(), b.data());
   ASSERT_FALSE(didNotOverflow);
@@ -146,8 +116,8 @@ TYPED_TEST(MatrixMultiplicationTestFixture, kColumnMajor) {
   std::vector<TypeParam> c_test(M * N);
   std::vector<TypeParam> c_reference(M * N);
 
-  initRandomMatrix<TypeParam>(M, K, a.data(), 1, 2);  //< init random matrix will values 1 or 2 to avoid overflow
-  initRandomMatrix<TypeParam>(K, N, b.data(), 1, 2);  //< init random matrix will values 1 or 2 to avoid overflow
+  core::test::initRandomMatrix<TypeParam>(M, K, a.data(), 1, 2);  //< init random matrix will values 1 or 2 to avoid overflow
+  core::test::initRandomMatrix<TypeParam>(K, N, b.data(), 1, 2);  //< init random matrix will values 1 or 2 to avoid overflow
 
   memset(c_test.data(), 0, c_test.size() * sizeof(TypeParam));
   memset(c_reference.data(), 0, c_reference.size() * sizeof(TypeParam));
@@ -178,8 +148,8 @@ TYPED_TEST(MatrixMultiplicationTestFixture, HardwareMultiplierMulIdentity) {
   std::vector<TypeParam> c_test(M * N);
   std::vector<TypeParam> c_reference(M * N);
 
-  initRandomMatrix<TypeParam>(M, K, a.data(), 1, 2);  //< init random matrix will values 1 or 2 to avoid overflow
-  initRandomMatrix<TypeParam>(K, N, b.data(), 1, 2);  //< init random matrix will values 1 or 2 to avoid overflow
+  core::test::initRandomMatrix<TypeParam>(M, K, a.data(), 1, 2);  //< init random matrix will values 1 or 2 to avoid overflow
+  core::test::initRandomMatrix<TypeParam>(K, N, b.data(), 1, 2);  //< init random matrix will values 1 or 2 to avoid overflow
 
   memset(c_test.data(), 0, c_test.size() * sizeof(TypeParam));
   memset(c_reference.data(), 0, c_reference.size() * sizeof(TypeParam));

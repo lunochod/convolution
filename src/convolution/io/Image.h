@@ -2,8 +2,8 @@
 #define CONVOLUTION_IO_IMAGE_H
 
 #include <convolution/core/Filter.h>
-#include <convolution/core/MatrixMultiplication.h>
 #include <convolution/core/logging.h>
+#include <convolution/core/math.h>
 
 #include <cstdint>
 #include <filesystem>

@@ -1,4 +1,4 @@
-#include <convolution/core/MatrixTranspose.h>
+#include <convolution/core/math.h>
 #include <convolution/io/Image.h>
 
 #include <algorithm>
