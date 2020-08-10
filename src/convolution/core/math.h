@@ -22,6 +22,27 @@ uint64_t address(uint32_t M, uint32_t N, uint32_t m, uint32_t n) {
   }
 }
 
+/// simple out-of-place matrix transpose for matrices M != N
+/// faster algorithms exist
+template <typename T, MatrixOrder order>
+void transpose(uint32_t M, uint32_t N, T *data, T *buffer = nullptr) {
+  std::vector<T> tmp;
+  if (!buffer) {
+    tmp.resize(M * N);
+    buffer = tmp.data();
+  }
+  for (uint32_t m = 0; m < M; ++m) {
+    for (uint32_t n = 0; n < N; ++n) {
+      if constexpr (order == core::MatrixOrder::kRowMajor) {
+        buffer[address<core::MatrixOrder::kColumnMajor>(M, N, m, n)] = data[address<core::MatrixOrder::kRowMajor>(M, N, m, n)];
+      } else {
+        buffer[address<core::MatrixOrder::kRowMajor>(M, N, m, n)] = data[address<core::MatrixOrder::kColumnMajor>(M, N, m, n)];
+      }
+    }
+  }
+  memcpy(data, buffer, sizeof(T) * M * N);
+}
+
 template <typename T, MatrixOrder cOrder, MatrixOrder aOrder, MatrixOrder bOrder, bool useOverflowDetection = false>
 bool gemm(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
   T a_mk = 0;
@@ -68,53 +89,57 @@ template <typename T, MatrixOrder cOrder, MatrixOrder aOrder, MatrixOrder bOrder
 bool mult(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
   static_assert(aOrder == core::MatrixOrder::kColumnMajor, "Matrix a in c = a x b must be in core::MatrixOrder::kColumnMajor");
   static_assert(bOrder == core::MatrixOrder::kRowMajor, "Matrix b in c = a x b must be in core::MatrixOrder::kRowMajor");
+  static_assert(cOrder == core::MatrixOrder::kColumnMajor, "Matrix c in c = a x b must be in core::MatrixOrder::kColumnMajor");
+
+  if (N % P + K % P != 0) {
+    spdlog::error("matrix dimensions MxNxK = {}x{}x{} not aligned with P = {}", M, N, K, P);
+    return false;
+  }
 
   if (K > P) {
     // for K > P we break down the MxNxK multiplication into MxNxP multiplications
-    bool res = true;
+    bool noOverflow = true;
 
-    const T *a1 = a;
-    const T *b1 = b;
+    const T *aPtr = a;  //< pointer into matrix a
+    const T *bPtr = b;  //< pointer into matrix b
+    T *cPtr = c;        //< pointer into matrix c
 
-    const uint32_t a_height = M;
-    const uint32_t b_width = N;
+    std::vector<T> buffer(N * P);        //< a buffer of size N*P
+    const T *bufferPtr = buffer.data();  // pointer into the buffer
 
-    // the partial results get accumulated in the output matrix c
-    // this may result in overflows
-    for (uint32_t p = P; p <= K; p += P) {
-      res &= mult<T, cOrder, aOrder, bOrder, P, useOverflowDetection>(M, N, P, c, a1, b1);
-      a1 += a_height * P;
-      b1 += b_width * P;
+    // outer loop over K in steps of P
+    for (uint32_t p = 0; p < K; p += P) {
+      // copy N*P elements from matrix b following bPtr into the buffer
+      memcpy(buffer.data(), bPtr, buffer.size() * sizeof(T));
+
+      // transpose data in buffer
+      core::transpose<T, bOrder>(P, N, buffer.data());
+
+      // reset pointers for inner loop
+      bufferPtr = buffer.data();
+      cPtr = c;
+
+      // inner loop over N in steps of P
+      for (uint32_t q = 0; q < N; q += P) {
+        noOverflow &= gemm<T, cOrder, aOrder, core::MatrixOrder::kColumnMajor, useOverflowDetection>(M, P, P, cPtr, aPtr, bufferPtr);
+        bufferPtr += P * P;  //< step forward P*P elements in buffer
+        cPtr += M * P;       //< step forward M*P elements in matrix c
+      }
+
+      aPtr += M * P;  //< step forward M*P elements in matrix a
+      bPtr += N * P;  //< step forward N*P elements in matrix b
     }
 
-    if (K % P != 0) {
-      // if K doesn't align with P we execute one more MxNx(K%P) multiplication
-      // we assume that the P-multiplier can handle K < P internally
-      // the alternative is to pad the input data, such that K % P == 0
-      res &= mult<T, cOrder, aOrder, bOrder, P, useOverflowDetection>(M, N, K % P, c, a1, b1);
-    }
-
-    return res;
+    return noOverflow;
   } else {
     // this multiplication is only called for K <= P representing the hardware multiplier
     return gemm<T, cOrder, aOrder, bOrder, useOverflowDetection>(M, N, K, c, a, b);
   }
 }
 
-/// simple out-of-place matrix transpose for matrices M != N
-/// faster algorithms exist
-template <typename T, MatrixOrder order>
-void transpose(uint32_t M, uint32_t N, T *data, T *buffer) {
-  for (uint32_t m = 0; m < M; ++m) {
-    for (uint32_t n = 0; n < N; ++n) {
-      if constexpr (order == core::MatrixOrder::kRowMajor) {
-        buffer[address<core::MatrixOrder::kColumnMajor>(M, N, m, n)] = data[address<core::MatrixOrder::kRowMajor>(M, N, m, n)];
-      } else {
-        buffer[address<core::MatrixOrder::kRowMajor>(M, N, m, n)] = data[address<core::MatrixOrder::kColumnMajor>(M, N, m, n)];
-      }
-    }
-  }
-  memcpy(data, buffer, sizeof(T) * M * N);
+template <typename T, T alignment>
+constexpr T getAlignedSize(const T size) {
+  return size % alignment == 0 ? size : (size / alignment + 1) * alignment;
 }
 
 }  // namespace core
