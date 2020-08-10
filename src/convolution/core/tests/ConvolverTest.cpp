@@ -23,7 +23,7 @@ namespace {
 }  // namespace
 
 TEST(Convolution, IdentityFilter) {
-  constexpr uint32_t P = 8;  //< hardware multiplier size
+  constexpr uint32_t P = 2;  //< hardware multiplier size
   constexpr uint32_t kHeight = 1;
   constexpr uint32_t kWidth = 1;
   constexpr uint32_t kInputChannels = 3;
@@ -38,12 +38,12 @@ TEST(Convolution, IdentityFilter) {
   };
   // clang-format on
 
-  using TestFilter = core::Filter<uint8_t, kHeight, kWidth, kInputChannels, kOutputChannels>;
+  using TestFilter = core::Filter<uint8_t, kHeight, kWidth, kInputChannels, kOutputChannels, P>;
 
   // create a TestFilter using random data for the filter elements
   std::shared_ptr<TestFilter> filter = std::make_shared<TestFilter>(elements);
 
-  // create the Convolver using the previously defined random filter
+  // create the Convolver using the previously defined filter
   core::Convolver<P> conv(filter);
 
   // define a test image
