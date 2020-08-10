@@ -24,7 +24,7 @@ bool Convolver<alignment>::img2col() {
     return false;
   }
 
-  IFilter<uint8_t> &filter = *filterPtr;
+  IFilter<ColumnDataT> &filter = *filterPtr;
 
   const uint32_t imgWidth = img.width();
   const uint32_t imgHeight = img.height();
@@ -38,16 +38,16 @@ bool Convolver<alignment>::img2col() {
   const uint32_t columnBufferWidthAligned = core::getAlignedSize<uint32_t, alignment>(columnBufferWidth);
 
   // create a clear a line buffer with sufficient space for left and right padding
-  StorageT lineBuffer(imgWidth + filterWidth - 1);
-  memset(lineBuffer.data(), 0, lineBuffer.size());
+  std::vector<ColumnDataT> lineBuffer(imgWidth + filterWidth - 1);
+  std::fill(lineBuffer.begin(), lineBuffer.end(), 0);
 
   // resize and clear the column buffer
   colBufferPtr->resize(columnBufferHeight * columnBufferWidthAligned);
-  memset(colBufferPtr->data(), 0, colBufferPtr->size());
+  std::fill(colBufferPtr->begin(), colBufferPtr->end(), 0);
 
   // resize and clear the transform buffer
   transformBufferPtr->resize(img.pixels() * core::getAlignedSize<uint32_t, alignment>(filter.numOutputChannels()));
-  memset(transformBufferPtr->data(), 0, transformBufferPtr->size());
+  std::fill(transformBufferPtr->begin(), transformBufferPtr->end(), 0);
 
   // iterate over each channel
   for (uint32_t img_c = 0; img_c < imgChannels; ++img_c) {
@@ -76,7 +76,7 @@ bool Convolver<alignment>::img2col() {
   if constexpr (order == core::MatrixOrder::kColumnMajor) {
     const uint32_t N = columnBufferWidthAligned;
     const uint32_t M = img.pixels();
-    core::transpose<uint8_t, core::MatrixOrder::kRowMajor>(M, N, colBufferPtr->data(), transformBufferPtr->data());
+    core::transpose<ColumnDataT, core::MatrixOrder::kRowMajor>(M, N, colBufferPtr->data());
   }
 
   return true;
@@ -91,24 +91,23 @@ void Convolver<alignment>::operator()(const fs::path &path) {
   // we require the column buffer to be in column-major order for core::mult()
   img2col<core::MatrixOrder::kColumnMajor>();
 
-  uint8_t *colBuffer = getColumnBuffer()->data();
-  uint8_t *filterBuffer = filterPtr->getColumnBuffer();
+  ColumnDataT *colBuffer = getColumnBuffer()->data();
+  ColumnDataT *filterBuffer = filterPtr->getColumnBuffer();
 
   const uint32_t M = img.width() * img.height();
   const uint32_t N = core::getAlignedSize<uint32_t, alignment>(filterPtr->numOutputChannels());
   const uint32_t K = core::getAlignedSize<uint32_t, alignment>(filterPtr->height() * filterPtr->width() * filterPtr->numInputChannels());
 
   auto output = getTransformBuffer();
-  memset(output->data(), 0, output->size());
+  std::fill(output->begin(), output->end(), 0);
 
-  bool didNotOverflow = core::mult<uint8_t, core::MatrixOrder::kColumnMajor, core::MatrixOrder::kColumnMajor, core::MatrixOrder::kRowMajor, alignment, true>(M, N, K, output->data(), colBuffer, filterBuffer);
-  //bool didNotOverflow = core::gemm<uint8_t, core::MatrixOrder::kColumnMajor, core::MatrixOrder::kColumnMajor, core::MatrixOrder::kRowMajor, true>(M, N, K, outputBuffer->data(), colBuffer, filterBuffer);
+  bool didNotOverflow = core::mult<TransformDataT, ColumnDataT, core::MatrixOrder::kColumnMajor, core::MatrixOrder::kColumnMajor, core::MatrixOrder::kRowMajor, alignment, true>(M, N, K, output->data(), colBuffer, filterBuffer);
   if (!didNotOverflow) {
-    spdlog::critical("Overflow detected in core::mult<uint8_t>");
-    throw "Overflow detected in core::mult<uint8_t>";
+    spdlog::critical("Overflow detected in core::mult");
+    throw "Overflow detected in core::mult";
   }
 
-  core::transpose<uint8_t, core::MatrixOrder::kColumnMajor>(M, N, output->data());
+  core::transpose<TransformDataT, core::MatrixOrder::kColumnMajor>(M, N, output->data());
 
   auto addr = [&](const uint32_t img_x, const uint32_t img_y, const uint32_t oc) {
     const uint32_t pixelIndex = img.width() * img_y + img_x;
@@ -134,12 +133,12 @@ void Convolver<alignment>::operator()(const fs::path &path) {
 }
 
 template <uint32_t alignment>
-typename Convolver<alignment>::StoragePtr Convolver<alignment>::getColumnBuffer() const {
+typename Convolver<alignment>::ColumnBufferPtr Convolver<alignment>::getColumnBuffer() const {
   return colBufferPtr;
 }
 
 template <uint32_t alignment>
-typename Convolver<alignment>::StoragePtr Convolver<alignment>::getTransformBuffer() const {
+typename Convolver<alignment>::TransformBufferPtr Convolver<alignment>::getTransformBuffer() const {
   return transformBufferPtr;
 }
 

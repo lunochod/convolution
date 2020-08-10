@@ -45,20 +45,20 @@ void transpose(uint32_t M, uint32_t N, T *data, T *buffer = nullptr) {
 }
 
 /// \brief general MxNxK matrix-matrix multiplication
-template <typename T, MatrixOrder cOrder, MatrixOrder aOrder, MatrixOrder bOrder, bool useOverflowDetection = false>
-bool gemm(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
-  T a_mk = 0;
-  T b_kn = 0;
+template <typename R, typename T, MatrixOrder cOrder, MatrixOrder aOrder, MatrixOrder bOrder, bool useOverflowDetection = false>
+bool gemm(uint32_t M, uint32_t N, uint32_t K, R *c, const T *a, const T *b) {
+  R a_mk = 0;
+  R b_kn = 0;
 
   for (uint32_t m = 0; m < M; ++m) {
     for (uint32_t n = 0; n < N; ++n) {
-      T sum = (T)0;
+      R sum = 0;
       for (uint32_t k = 0; k < K; ++k) {
         a_mk = a[address<aOrder>(M, K, m, k)];
         b_kn = b[address<bOrder>(K, N, k, n)];
 
         if constexpr (useOverflowDetection) {
-          T overflow = 0;
+          R overflow = 0;
           if (__builtin_mul_overflow(a_mk, b_kn, &overflow)) {
             return false;
           }
@@ -70,7 +70,7 @@ bool gemm(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
       }
 
       if constexpr (useOverflowDetection) {
-        T overflow = 0;
+        R overflow = 0;
         if (__builtin_add_overflow(c[address<cOrder>(M, N, m, n)], sum, &overflow)) {
           return false;
         }
@@ -82,9 +82,9 @@ bool gemm(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
   return true;
 }
 
-template <typename T, MatrixOrder order, bool useOverflowDetection = false>
-bool gemm(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
-  return gemm<T, order, order, order, useOverflowDetection>(M, N, K, c, a, b);
+template <typename R, typename T, MatrixOrder order, bool useOverflowDetection = false>
+bool gemm(uint32_t M, uint32_t N, uint32_t K, R *c, const T *a, const T *b) {
+  return gemm<R, T, order, order, order, useOverflowDetection>(M, N, K, c, a, b);
 }
 
 /// \brief general MxNxK matrix-matrix multiplication using an MxPxP matrix-matrix multiplier
@@ -92,8 +92,8 @@ bool gemm(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
 ///  M can be arbitrary
 ///  N must be divisible by P
 ///  K must be divisible by P
-template <typename T, MatrixOrder cOrder, MatrixOrder aOrder, MatrixOrder bOrder, uint32_t P, bool useOverflowDetection = false>
-bool mult(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
+template <typename R, typename T, MatrixOrder cOrder, MatrixOrder aOrder, MatrixOrder bOrder, uint32_t P, bool useOverflowDetection = false>
+bool mult(uint32_t M, uint32_t N, uint32_t K, R *c, const T *a, const T *b) {
   static_assert(aOrder == core::MatrixOrder::kColumnMajor, "Matrix a in c = a x b must be in core::MatrixOrder::kColumnMajor");
   static_assert(bOrder == core::MatrixOrder::kRowMajor, "Matrix b in c = a x b must be in core::MatrixOrder::kRowMajor");
   static_assert(cOrder == core::MatrixOrder::kColumnMajor, "Matrix c in c = a x b must be in core::MatrixOrder::kColumnMajor");
@@ -107,7 +107,7 @@ bool mult(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
 
   const T *aPtr = a;  //< pointer into matrix a
   const T *bPtr = b;  //< pointer into matrix b
-  T *cPtr = c;        //< pointer into matrix c
+  R *cPtr = c;        //< pointer into matrix c
 
   std::vector<T> buffer(N * P);        //< a buffer of size N*P used to transpose
   const T *bufferPtr = buffer.data();  //< pointer into the buffer
@@ -127,7 +127,7 @@ bool mult(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
     // inner loop over N in steps of P
     for (uint32_t q = 0; q < N; q += P) {
       // the MxPxP matrix-matrix multiplication
-      noOverflow &= gemm<T, cOrder, aOrder, core::MatrixOrder::kColumnMajor, useOverflowDetection>(M, P, P, cPtr, aPtr, bufferPtr);
+      noOverflow &= gemm<R, T, cOrder, aOrder, core::MatrixOrder::kColumnMajor, useOverflowDetection>(M, P, P, cPtr, aPtr, bufferPtr);
       bufferPtr += P * P;  //< step forward P*P elements in buffer
       cPtr += M * P;       //< step forward M*P elements in matrix c
     }

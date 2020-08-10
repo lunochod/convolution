@@ -11,6 +11,7 @@
 namespace convolution {
 namespace core {
 
+/// \brief Abstract Filter interface
 template <typename T>
 class IFilter {
  public:

@@ -99,7 +99,7 @@ TEST(ConvolverTest, ColumnBuffer) {
       // iterate over the current line pixel-by-pixel horizontally
       for (int32_t img_x = 0; img_x < cimg.width(); ++img_x) {
         // clear the patch
-        memset(patch.data(), 0, fHeight * fWidth);
+        std::fill(patch.begin(), patch.end(), 0);
         // read the image data covering the filter
         patchIdx = 0;
         for (uint32_t filter_y = 0; filter_y < filter->height(); ++filter_y) {

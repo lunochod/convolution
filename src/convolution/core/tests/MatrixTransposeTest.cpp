@@ -29,7 +29,8 @@ TYPED_TEST(MatrixTransposeTestFixture, MN) {
 
   core::test::initRandomMatrix<TypeParam>(M, N, a.data());
   memcpy(reference.data(), a.data(), sizeof(TypeParam) * a.size());
-  memset(buffer.data(), 0, buffer.size() * sizeof(TypeParam));
+
+  std::fill(buffer.begin(), buffer.end(), 0);
 
   core::transpose<TypeParam, core::MatrixOrder::kRowMajor>(M, N, a.data(), buffer.data());
 

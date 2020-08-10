@@ -10,30 +10,38 @@
 namespace convolution {
 namespace core {
 
+/// \class Convolver class
+/// \brief Convolve an image using a filter
 template <uint32_t alignment>
 class Convolver {
  public:
-  using StorageT = std::vector<uint8_t>;
-  using StoragePtr = std::shared_ptr<StorageT>;
+  using ColumnDataT = uint8_t;
+  using ColumnBufferT = std::vector<ColumnDataT>;
+  using ColumnBufferPtr = std::shared_ptr<ColumnBufferT>;
+
+  using TransformDataT = uint16_t;
+  using TransformBufferT = std::vector<TransformDataT>;
+  using TransformBufferPtr = std::shared_ptr<TransformBufferT>;
 
  private:
-  StoragePtr colBufferPtr = std::make_shared<StorageT>();        ///< column buffer
-  StoragePtr transformBufferPtr = std::make_shared<StorageT>();  ///< transform buffer
-  std::shared_ptr<IFilter<uint8_t>> filterPtr;                   ///< filter used for the convolution
-  io::Image img;                                                 ///< image used for the convolution
+  ColumnBufferPtr colBufferPtr = std::make_shared<ColumnBufferT>();              ///< the column buffer is used to store the result of transforming the image into column format
+  TransformBufferPtr transformBufferPtr = std::make_shared<TransformBufferT>();  ///< the transform buffer is used to store the results of multiplying the column buffer with the filter
+  std::shared_ptr<IFilter<uint8_t>> filterPtr;                                   ///< filter used for the convolution
+  io::Image img;                                                                 ///< image used for the convolution
 
  protected:
   /// convert image into column buffer format
   template <core::MatrixOrder order = core::MatrixOrder::kRowMajor>
   bool img2col();
 
-  bool read(const fs::path &path);  ///< read image located at path
+  /// read image located at path
+  bool read(const fs::path &path);
 
   /// address calculation into the column buffer
   uint32_t calcColumnBufferOffset(const uint32_t ix, const uint32_t iy, const uint32_t ic, const uint32_t fx, const uint32_t fy) const;
 
-  StoragePtr getColumnBuffer() const;
-  StoragePtr getTransformBuffer() const;
+  ColumnBufferPtr getColumnBuffer() const;
+  TransformBufferPtr getTransformBuffer() const;
 
  public:
   explicit Convolver(std::shared_ptr<IFilter<uint8_t>> f) : filterPtr(f), img() {}
