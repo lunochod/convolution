@@ -38,8 +38,21 @@ bool Image::read(const fs::path &path) {
   return true;
 }
 
-template bool Image::img2col<core::MatrixOrder::kRowMajor>(const core::IFilter<uint8_t> &);
-template bool Image::img2col<core::MatrixOrder::kColumnMajor>(const core::IFilter<uint8_t> &);
+/// \brief write selected channel of the image buffer to the path provided
+bool Image::write(const fs::path &path, const uint32_t oc) const {
+  CImg<uint8_t> image(width(), height(), 1, 1);
+
+  for (uint32_t img_y = 0; img_y < height(); ++img_y) {
+    for (uint32_t img_x = 0; img_x < width(); ++img_x) {
+      uint32_t read = calcImageBufferOffset(img_x, img_y, oc);
+      image(img_x, img_y, 0, 0) = (*imgBufferPtr)[read];
+    }
+  }
+
+  image.save(path.c_str());
+  spdlog::info("Write image {} {}x{}x{} {} Byte", path.c_str(), width(), height(), 1, width() * height());
+  return true;
+}
 
 }  // namespace io
 }  // namespace convolution
