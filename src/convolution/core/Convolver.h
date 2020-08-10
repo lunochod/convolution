@@ -18,7 +18,7 @@ class Convolver {
 
  private:
   std::shared_ptr<IFilter<uint8_t>> filterPtr;
-  io::Image io;
+  io::Image img;
   StoragePtr colBufferPtr = std::make_shared<StorageT>();        ///< column buffer
   StoragePtr transformBufferPtr = std::make_shared<StorageT>();  ///< transform buffer
 
@@ -27,7 +27,7 @@ class Convolver {
   bool img2col();
 
   bool read(const fs::path &path) {
-    return io.read(path);
+    return img.read(path);
   }
 
   /// address calculation into the column buffer
@@ -37,7 +37,7 @@ class Convolver {
   StoragePtr getTransformBuffer() const;
 
  public:
-  explicit Convolver(std::shared_ptr<IFilter<uint8_t>> f) : filterPtr(f), io() {}
+  explicit Convolver(std::shared_ptr<IFilter<uint8_t>> f) : filterPtr(f), img() {}
   void operator()(const fs::path &path);
 };
 
