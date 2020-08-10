@@ -12,34 +12,37 @@ namespace convolution {
 namespace core {
 
 /// \brief Abstract Filter interface
+/// \tparam T(typename) the C++ type used for data elements of the filter
 template <typename T>
 class IFilter {
  public:
   virtual ~IFilter(){};
-  virtual uint32_t height() const = 0;
-  virtual uint32_t width() const = 0;
-  virtual uint32_t numInputChannels() const = 0;
-  virtual uint32_t numOutputChannels() const = 0;
+  virtual uint32_t height() const = 0;             ///< returns the filter height in pixels
+  virtual uint32_t width() const = 0;              ///< returns filter width in pixels
+  virtual uint32_t numInputChannels() const = 0;   ///< returns the number of input channels of the filter
+  virtual uint32_t numOutputChannels() const = 0;  ///< returns the number of output channels of the filter
 
-  virtual uint32_t leftPadding() const = 0;
-  virtual uint32_t rightPadding() const = 0;
-  virtual uint32_t topPadding() const = 0;
-  virtual uint32_t bottomPadding() const = 0;
+  virtual uint32_t leftPadding() const = 0;    ///< returns the padding required on the left of the image
+  virtual uint32_t rightPadding() const = 0;   ///< returns the padding required on the right of the image
+  virtual uint32_t topPadding() const = 0;     ///< returns the padding required on the top of the image
+  virtual uint32_t bottomPadding() const = 0;  ///< returns the padding required on the bottom of the image
 
-  virtual T *getFilterBuffer() = 0;
+  virtual T *getFilterBuffer() = 0;  ///< returns raw pointer to the filter buffer
   virtual const T *getFilterBuffer() const = 0;
 
-  virtual T *getColumnBuffer() = 0;
+  virtual T *getColumnBuffer() = 0;  ///< returns a raw pointer to the filter in column buffer format
   virtual const T *getColumnBuffer() const = 0;
 };
 
 /// \class Filter
-/// \brief a 4D filter that can be used for convolutions
+/// \brief Implements a 4D filter that can be used for convolution of images
+///
 ///  The Filter class is used to construct a KxN column buffer matrix that can be used for convolution, where:
 ///    K = kHeight * kWidth * kInputChannels
 ///    N = kOutputChanels
 ///  where K and N can be padded to be aligned to the alignment parameter specified
-///  see http://15418.courses.cs.cmu.edu/fall2017/lecture/dnn/slide_023
+///
+/// \see http://15418.courses.cs.cmu.edu/fall2017/lecture/dnn/slide_023
 /// \tparam T(typename) the data type used for the elements of the filter
 /// \tparam kHeight(uint32_t) filter height
 /// \tparam kWidth(uint32_t) filter width

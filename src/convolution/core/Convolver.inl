@@ -2,11 +2,12 @@ namespace convolution {
 namespace core {
 
 /// \brief calculate an offset into the column buffer
+/// \see http://15418.courses.cs.cmu.edu/fall2017/lecture/dnn/slide_023
 /// \param img_x(const uint32_t) pixel position along the horizontal width of the image in row-major format
 /// \param img_y(const uint32_t) pixel position along the vertical height of the image in row-major format
 /// \param img_c(const uint32_t) pixel channel
-/// \tparam filter_x(const uint32_t) filter position along the horizontal width of the filter in row-major format
-/// \tparam filter_y(const uint32_t) filter position along the vertical height of the filter in row-major format
+/// \param filter_x(const uint32_t) filter position along the horizontal width of the filter in row-major format
+/// \param filter_y(const uint32_t) filter position along the vertical height of the filter in row-major format
 /// \return the offset into the column buffer
 template <uint32_t alignment>
 uint32_t Convolver<alignment>::calcColumnBufferOffset(const uint32_t img_x, const uint32_t img_y, const uint32_t img_c, const uint32_t filter_x, const uint32_t filter_y) const {
@@ -17,6 +18,7 @@ uint32_t Convolver<alignment>::calcColumnBufferOffset(const uint32_t img_x, cons
 }
 
 /// \brief convert a multi-channel image into column buffer format suitable to support convolution
+/// \see http://15418.courses.cs.cmu.edu/fall2017/lecture/dnn/slide_023
 /// \tparam order(core::MatrixOrder) the matrix order to be used by the column buffer in support of the matrix-matrix multiplication
 /// \return bool true on success, false otherwise
 template <uint32_t alignment>
@@ -93,7 +95,8 @@ bool Convolver<alignment>::img2col() {
   return true;
 }
 
-/// \brief operator to execute the convolution using the image provided at path
+/// \brief Execute the convolution operator using the image provided at path
+/// Writes a monochrome image for each output channel of the filter being used
 /// \param path (const fs:path &) image location on disk
 template <uint32_t alignment>
 void Convolver<alignment>::operator()(const fs::path &path) {

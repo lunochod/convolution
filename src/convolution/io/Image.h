@@ -20,7 +20,7 @@ namespace io {
 /// \class Image class to support reading and writing images from and to disk
 class Image {
  public:
-  using StorageT = std::vector<uint8_t>;
+  using StorageT = std::vector<uint8_t>;  ///< storage type used to store a single channel pixel
   using StoragePtr = std::shared_ptr<StorageT>;
 
  private:
@@ -30,18 +30,15 @@ class Image {
   StoragePtr imgBufferPtr = nullptr;  ///< image buffer in row-major format
 
  public:
-  bool read(const fs::path &path);                            ///< read image at path into image buffer
-  bool write(const fs::path &path, const uint32_t oc) const;  ///< write transform buffer to image specified at path
+  bool read(const fs::path &path);
+  bool write(const fs::path &path, const uint32_t oc) const;
 
-  uint32_t width() const { return imgWidth; };
-  uint32_t height() const { return imgHeight; };
-  uint32_t channels() const { return imgChannels; };
-  uint32_t pixels() const { return imgWidth * imgHeight; };
-  uint32_t elements() const { return imgWidth * imgHeight * imgChannels; }
+  uint32_t width() const { return imgWidth; };               ///< returns the width of the image in pixel
+  uint32_t height() const { return imgHeight; };             ///< returns the height of the image in pixel
+  uint32_t channels() const { return imgChannels; };         ///< returns the number of image channels
+  uint32_t pixels() const { return imgWidth * imgHeight; };  ///< returns the number of image pixels
 
-  StoragePtr getImageBuffer() const { return imgBufferPtr; }
-
-  /// address calculation into the image buffer
+  StoragePtr getImageBuffer() const { return imgBufferPtr; }  ///< returns the image buffer containing the pixel data
   uint32_t calcImageBufferOffset(const uint32_t ix, const uint32_t iy, const uint32_t channel) const;
 };
 

@@ -7,17 +7,17 @@ namespace convolution {
 namespace io {
 
 /// \brief Calculate an offset into the image buffer using image coordinates
-///
-/// The image buffer uses row-major format
-///
-/// \param ix (const uint32_t) x-position of the pixel in the image
-/// \param iy (const uint32_t) y-position of the pixel in the image
-/// \param ic (const uint32_t) channel of the pixel in the image
-uint32_t Image::calcImageBufferOffset(const uint32_t ix, const uint32_t iy, const uint32_t channel) const {
-  return pixels() * channel + width() * iy + ix;
+/// \param img_x (const uint32_t) x-position of the pixel in the image
+/// \param img_y (const uint32_t) y-position of the pixel in the image
+/// \param img_c (const uint32_t) channel of the pixel in the image
+/// \return (uint32_t) the offset into the image buffer to lookup the pixel data
+uint32_t Image::calcImageBufferOffset(const uint32_t img_x, const uint32_t img_y, const uint32_t img_c) const {
+  return pixels() * img_c + width() * img_y + img_x;
 }
 
 /// \brief read image at the path provided into the image buffer
+/// \param path(const fs::path &) path to image on disk
+/// \return true on success, false otherwise
 bool Image::read(const fs::path &path) {
   if (!fs::exists(path)) {
     spdlog::error("File {} doesn't exist.", path.c_str());
@@ -39,6 +39,9 @@ bool Image::read(const fs::path &path) {
 }
 
 /// \brief write selected channel of the image buffer to the path provided
+/// \param path(const fs::path &) path on filesystem to write image
+/// \param oc(const uint32_t) output channel to write
+/// \return true on success, false otherwise
 bool Image::write(const fs::path &path, const uint32_t oc) const {
   CImg<uint8_t> image(width(), height(), 1, 1);
 
