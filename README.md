@@ -27,6 +27,12 @@ make -j
 ```bash
 make check
 ```
+
+## Create Doxygen Documentation
+```bash
+make doxygen
+```
+
 ## Configure CMake to use a different Compiler
 For GCC use:
 ```bash
