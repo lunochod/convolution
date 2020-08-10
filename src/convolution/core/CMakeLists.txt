@@ -26,3 +26,8 @@ add_executable(ConvolverTest ${Convolution_SOURCE_DIR}/src/convolution/core/test
 target_link_libraries(ConvolverTest core io gtest_main -lm -lpthread -lX11)
 add_test(core::ConvolverTest ConvolverTest)
 add_dependencies(check ConvolverTest)
+
+add_executable(MathTest ${Convolution_SOURCE_DIR}/src/convolution/core/tests/MathTest.cpp)
+target_link_libraries(MathTest gtest_main)
+add_test(core::MathTest MathTest)
+add_dependencies(check MathTest)
