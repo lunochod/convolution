@@ -139,10 +139,10 @@ TYPED_TEST(MatrixMultiplicationTestFixture, kColumnMajor) {
 }
 
 TYPED_TEST(MatrixMultiplicationTestFixture, HardwareMultiplierMulIdentity) {
-  constexpr uint32_t M = 13;
-  constexpr uint32_t N = 17;
-  constexpr uint32_t K = 14;
-  constexpr uint32_t P = 4;
+  constexpr uint32_t M = 2;
+  constexpr uint32_t N = 4;
+  constexpr uint32_t K = 4;
+  constexpr uint32_t P = 2;
 
   std::vector<TypeParam> a(M * K);
   std::vector<TypeParam> b(K * N);
@@ -156,11 +156,11 @@ TYPED_TEST(MatrixMultiplicationTestFixture, HardwareMultiplierMulIdentity) {
   memset(c_reference.data(), 0, c_reference.size() * sizeof(TypeParam));
 
   // create the reference multiplication using core::gemm()
-  bool referenceDidNotOverflow = core::gemm<TypeParam, core::MatrixOrder::kRowMajor, core::MatrixOrder::kColumnMajor, core::MatrixOrder::kRowMajor, true>(M, N, K, c_reference.data(), a.data(), b.data());
+  bool referenceDidNotOverflow = core::gemm<TypeParam, core::MatrixOrder::kColumnMajor, core::MatrixOrder::kColumnMajor, core::MatrixOrder::kRowMajor, true>(M, N, K, c_reference.data(), a.data(), b.data());
   ASSERT_TRUE(referenceDidNotOverflow);
 
   // create the test multiplication using core::mult()
-  bool testDidNotOverflow = core::mult<TypeParam, core::MatrixOrder::kRowMajor, core::MatrixOrder::kColumnMajor, core::MatrixOrder::kRowMajor, P, true>(M, N, K, c_test.data(), a.data(), b.data());
+  bool testDidNotOverflow = core::mult<TypeParam, core::MatrixOrder::kColumnMajor, core::MatrixOrder::kColumnMajor, core::MatrixOrder::kRowMajor, P, true>(M, N, K, c_test.data(), a.data(), b.data());
   ASSERT_TRUE(testDidNotOverflow);
 
   ASSERT_EQ(memcmp(c_test.data(), c_reference.data(), c_test.size() * sizeof(TypeParam)), 0);
