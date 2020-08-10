@@ -4,8 +4,10 @@
 #include <convolution/core/math.h>
 
 #include <cstdint>
+#include <iostream>
 #include <limits>
 #include <random>
+#include <sstream>
 #include <vector>
 
 namespace convolution {
@@ -58,12 +60,14 @@ void initIdentityMatrix(const uint32_t M, const uint32_t N, T *mat) {
 
 template <typename T, core::MatrixOrder order>
 void print(const uint32_t M, const uint32_t N, const T *data) {
+  std::stringstream ss;
   for (uint32_t m = 0; m < M; ++m) {
     for (uint32_t n = 0; n < N; ++n) {
-      printf("%4d", data[core::address<order>(M, N, m, n)]);
+      ss << data[core::address<order>(M, N, m, n)];
     }
-    printf("\n");
+    ss << std::endl;
   }
+  std::cout << ss.str() << std::endl;
 }
 
 }  // namespace test

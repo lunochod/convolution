@@ -136,8 +136,8 @@ TEST(ConvolverTest, ColumnBuffer) {
   }
 }
 
-TEST(Convolution, IdentityFilter) {
-  constexpr uint32_t P = 2;  //< hardware multiplier size
+TEST(Convolution, ColorFilter) {
+  constexpr uint32_t P = 8;
   constexpr uint32_t kHeight = 1;
   constexpr uint32_t kWidth = 1;
   constexpr uint32_t kInputChannels = 3;

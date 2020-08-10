@@ -1,14 +1,24 @@
 namespace convolution {
 namespace core {
 
+/// \brief calculate an offset into the column buffer
+/// \param img_x(const uint32_t) pixel position along the horizontal width of the image in row-major format
+/// \param img_y(const uint32_t) pixel position along the vertical height of the image in row-major format
+/// \param img_c(const uint32_t) pixel channel
+/// \tparam filter_x(const uint32_t) filter position along the horizontal width of the filter in row-major format
+/// \tparam filter_y(const uint32_t) filter position along the vertical height of the filter in row-major format
+/// \return the offset into the column buffer
 template <uint32_t alignment>
-uint32_t Convolver<alignment>::calcColumnBufferOffset(const uint32_t ix, const uint32_t iy, const uint32_t ic, const uint32_t fx, const uint32_t fy) const {
-  const uint32_t pixelIndex = img.width() * iy + ix;
+uint32_t Convolver<alignment>::calcColumnBufferOffset(const uint32_t img_x, const uint32_t img_y, const uint32_t img_c, const uint32_t filter_x, const uint32_t filter_y) const {
+  const uint32_t pixelIndex = img.width() * img_y + img_x;
   const uint32_t filterSize = filterPtr->width() * filterPtr->height();
   const uint32_t columBufferWidthAligned = core::getAlignedSize<uint32_t, alignment>(filterSize * img.channels());
-  return pixelIndex * columBufferWidthAligned + ic * filterSize + filterPtr->width() * fy + fx;
+  return pixelIndex * columBufferWidthAligned + img_c * filterSize + filterPtr->width() * filter_y + filter_x;
 }
 
+/// \brief convert a multi-channel image into column buffer format suitable to support convolution
+/// \tparam order(core::MatrixOrder) the matrix order to be used by the column buffer in support of the matrix-matrix multiplication
+/// \return bool true on success, false otherwise
 template <uint32_t alignment>
 template <core::MatrixOrder order>
 bool Convolver<alignment>::img2col() {
@@ -37,7 +47,7 @@ bool Convolver<alignment>::img2col() {
   const uint32_t columnBufferHeight = img.pixels();
   const uint32_t columnBufferWidthAligned = core::getAlignedSize<uint32_t, alignment>(columnBufferWidth);
 
-  // create a clear a line buffer with sufficient space for left and right padding
+  // create and clear a line buffer with sufficient space for left and right padding
   std::vector<ColumnDataT> lineBuffer(imgWidth + filterWidth - 1);
   std::fill(lineBuffer.begin(), lineBuffer.end(), 0);
 
@@ -73,6 +83,7 @@ bool Convolver<alignment>::img2col() {
     }
   }
 
+  // in case kColumnMajor format is requested we need to transpose the column buffer
   if constexpr (order == core::MatrixOrder::kColumnMajor) {
     const uint32_t N = columnBufferWidthAligned;
     const uint32_t M = img.pixels();
@@ -82,13 +93,16 @@ bool Convolver<alignment>::img2col() {
   return true;
 }
 
+/// \brief operator to execute the convolution using the image provided at path
+/// \param path (const fs:path &) image location on disk
 template <uint32_t alignment>
 void Convolver<alignment>::operator()(const fs::path &path) {
   if (!img.read(path)) {
     spdlog::error("Image file {} not found.", path.c_str());
     return;
   }
-  // we require the column buffer to be in column-major order for core::mult()
+
+  // transform the image data into column buffer format using column-major order in support of core::mult()
   img2col<core::MatrixOrder::kColumnMajor>();
 
   ColumnDataT *colBuffer = getColumnBuffer()->data();
@@ -109,11 +123,13 @@ void Convolver<alignment>::operator()(const fs::path &path) {
 
   core::transpose<TransformDataT, core::MatrixOrder::kColumnMajor>(M, N, output->data());
 
+  // lambda for address calculation into the output buffer
   auto addr = [&](const uint32_t img_x, const uint32_t img_y, const uint32_t oc) {
     const uint32_t pixelIndex = img.width() * img_y + img_x;
     return pixelIndex * core::getAlignedSize<uint32_t, alignment>(filterPtr->numOutputChannels()) + oc;
   };
 
+  // write an 8Bit image for each output channel of the filter
   for (uint32_t oc = 0; oc < filterPtr->numOutputChannels(); ++oc) {
     auto filename = std::string(path.stem().c_str()) + "_" + std::to_string(oc) + ".png";
     fs::path oPath = path.parent_path() / filename;

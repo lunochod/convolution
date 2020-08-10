@@ -33,6 +33,19 @@ class IFilter {
   virtual const T *getColumnBuffer() const = 0;
 };
 
+/// \class Filter
+/// \brief a 4D filter that can be used for convolutions
+///  The Filter class is used to construct a KxN column buffer matrix that can be used for convolution, where:
+///    K = kHeight * kWidth * kInputChannels
+///    N = kOutputChanels
+///  where K and N can be padded to be aligned to the alignment parameter specified
+///  see http://15418.courses.cs.cmu.edu/fall2017/lecture/dnn/slide_023
+/// \tparam T(typename) the data type used for the elements of the filter
+/// \tparam kHeight(uint32_t) filter height
+/// \tparam kWidth(uint32_t) filter width
+/// \tparam kInputChannels(uint32_t) number of input channels of the filter
+/// \tparam kOutputChannels(uint32_t) number of output channels of the filter
+/// \tparam alignment(uint32_t) allows to force alignment of the column buffer
 template <typename T, uint32_t kHeight, uint32_t kWidth, uint32_t kInputChannels = 1, uint32_t kOutputChannels = 1, uint32_t alignment = 1>
 class Filter : public IFilter<T> {
  public:

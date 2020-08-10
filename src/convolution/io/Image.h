@@ -17,8 +17,7 @@ namespace fs = std::filesystem;
 namespace convolution {
 namespace io {
 
-/// \class Image
-/// \brief Read and image from disk and convert it into column buffer format
+/// \class Image class to support reading and writing images from and to disk
 class Image {
  public:
   using StorageT = std::vector<uint8_t>;

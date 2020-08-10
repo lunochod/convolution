@@ -10,8 +10,9 @@
 namespace convolution {
 namespace core {
 
-/// \class Convolver class
-/// \brief Convolve an image using a filter
+/// \class A class to convolve 8Bit image data using an 8Bit 4D filter
+/// To avoid overflow the results of the convolution are stored in a 16Bit data format
+/// \tparam alignment(uint32_t) align the column and filter buffer in support of the MxPxP multiplier to be used
 template <uint32_t alignment>
 class Convolver {
  public:
@@ -26,7 +27,7 @@ class Convolver {
  private:
   ColumnBufferPtr colBufferPtr = std::make_shared<ColumnBufferT>();              ///< the column buffer is used to store the result of transforming the image into column format
   TransformBufferPtr transformBufferPtr = std::make_shared<TransformBufferT>();  ///< the transform buffer is used to store the results of multiplying the column buffer with the filter
-  std::shared_ptr<IFilter<uint8_t>> filterPtr;                                   ///< filter used for the convolution
+  std::shared_ptr<IFilter<ColumnDataT>> filterPtr;                               ///< filter used for the convolution
   io::Image img;                                                                 ///< image used for the convolution
 
  protected:
