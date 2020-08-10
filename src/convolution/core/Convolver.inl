@@ -1,7 +1,6 @@
 namespace convolution {
 namespace core {
 
-/// address calculation into the column buffer
 template <uint32_t alignment>
 uint32_t Convolver<alignment>::calcColumnBufferOffset(const uint32_t ix, const uint32_t iy, const uint32_t ic, const uint32_t fx, const uint32_t fy) const {
   const uint32_t pixelIndex = img.width() * iy + ix;
@@ -142,6 +141,11 @@ typename Convolver<alignment>::StoragePtr Convolver<alignment>::getColumnBuffer(
 template <uint32_t alignment>
 typename Convolver<alignment>::StoragePtr Convolver<alignment>::getTransformBuffer() const {
   return transformBufferPtr;
+}
+
+template <uint32_t alignment>
+bool Convolver<alignment>::read(const fs::path &path) {
+  return img.read(path);
 }
 
 }  // namespace core

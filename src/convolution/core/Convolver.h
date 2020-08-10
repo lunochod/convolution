@@ -17,18 +17,17 @@ class Convolver {
   using StoragePtr = std::shared_ptr<StorageT>;
 
  private:
-  std::shared_ptr<IFilter<uint8_t>> filterPtr;
-  io::Image img;
   StoragePtr colBufferPtr = std::make_shared<StorageT>();        ///< column buffer
   StoragePtr transformBufferPtr = std::make_shared<StorageT>();  ///< transform buffer
+  std::shared_ptr<IFilter<uint8_t>> filterPtr;                   ///< filter used for the convolution
+  io::Image img;                                                 ///< image used for the convolution
 
  protected:
+  /// convert image into column buffer format
   template <core::MatrixOrder order = core::MatrixOrder::kRowMajor>
   bool img2col();
 
-  bool read(const fs::path &path) {
-    return img.read(path);
-  }
+  bool read(const fs::path &path);  ///< read image located at path
 
   /// address calculation into the column buffer
   uint32_t calcColumnBufferOffset(const uint32_t ix, const uint32_t iy, const uint32_t ic, const uint32_t fx, const uint32_t fy) const;

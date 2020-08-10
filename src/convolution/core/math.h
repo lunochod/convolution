@@ -13,6 +13,7 @@ enum class MatrixOrder {
   kColumnMajor
 };
 
+/// \brief address calculation for MxN matrices
 template <MatrixOrder order>
 uint64_t address(uint32_t M, uint32_t N, uint32_t m, uint32_t n) {
   if constexpr (order == core::MatrixOrder::kRowMajor) {
@@ -22,7 +23,7 @@ uint64_t address(uint32_t M, uint32_t N, uint32_t m, uint32_t n) {
   }
 }
 
-/// simple out-of-place matrix transpose for matrices M != N
+/// \brief simple out-of-place matrix transpose for general matrices where M != N
 /// faster algorithms exist
 template <typename T, MatrixOrder order>
 void transpose(uint32_t M, uint32_t N, T *data, T *buffer = nullptr) {
@@ -43,6 +44,7 @@ void transpose(uint32_t M, uint32_t N, T *data, T *buffer = nullptr) {
   memcpy(data, buffer, sizeof(T) * M * N);
 }
 
+/// \brief general MxNxK matrix-matrix multiplication
 template <typename T, MatrixOrder cOrder, MatrixOrder aOrder, MatrixOrder bOrder, bool useOverflowDetection = false>
 bool gemm(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
   T a_mk = 0;
@@ -85,6 +87,11 @@ bool gemm(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
   return gemm<T, order, order, order, useOverflowDetection>(M, N, K, c, a, b);
 }
 
+/// \brief general MxNxK matrix-matrix multiplication using an MxPxP matrix-matrix multiplier
+/// Note:
+///  M can be arbitrary
+///  N must be divisible by P
+///  K must be divisible by P
 template <typename T, MatrixOrder cOrder, MatrixOrder aOrder, MatrixOrder bOrder, uint32_t P, bool useOverflowDetection = false>
 bool mult(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
   static_assert(aOrder == core::MatrixOrder::kColumnMajor, "Matrix a in c = a x b must be in core::MatrixOrder::kColumnMajor");
@@ -96,47 +103,43 @@ bool mult(uint32_t M, uint32_t N, uint32_t K, T *c, const T *a, const T *b) {
     return false;
   }
 
-  if (K > P) {
-    // for K > P we break down the MxNxK multiplication into MxNxP multiplications
-    bool noOverflow = true;
+  bool noOverflow = true;
 
-    const T *aPtr = a;  //< pointer into matrix a
-    const T *bPtr = b;  //< pointer into matrix b
-    T *cPtr = c;        //< pointer into matrix c
+  const T *aPtr = a;  //< pointer into matrix a
+  const T *bPtr = b;  //< pointer into matrix b
+  T *cPtr = c;        //< pointer into matrix c
 
-    std::vector<T> buffer(N * P);        //< a buffer of size N*P
-    const T *bufferPtr = buffer.data();  // pointer into the buffer
+  std::vector<T> buffer(N * P);        //< a buffer of size N*P used to transpose
+  const T *bufferPtr = buffer.data();  //< pointer into the buffer
 
-    // outer loop over K in steps of P
-    for (uint32_t p = 0; p < K; p += P) {
-      // copy N*P elements from matrix b following bPtr into the buffer
-      memcpy(buffer.data(), bPtr, buffer.size() * sizeof(T));
+  // outer loop over K in steps of P
+  for (uint32_t p = 0; p < K; p += P) {
+    // copy N*P elements from matrix b following bPtr into the buffer
+    memcpy(buffer.data(), bPtr, buffer.size() * sizeof(T));
 
-      // transpose data in buffer
-      core::transpose<T, bOrder>(P, N, buffer.data());
+    // transpose data in buffer
+    core::transpose<T, bOrder>(P, N, buffer.data());
 
-      // reset pointers for inner loop
-      bufferPtr = buffer.data();
-      cPtr = c;
+    // reset pointers for inner loop
+    bufferPtr = buffer.data();
+    cPtr = c;
 
-      // inner loop over N in steps of P
-      for (uint32_t q = 0; q < N; q += P) {
-        noOverflow &= gemm<T, cOrder, aOrder, core::MatrixOrder::kColumnMajor, useOverflowDetection>(M, P, P, cPtr, aPtr, bufferPtr);
-        bufferPtr += P * P;  //< step forward P*P elements in buffer
-        cPtr += M * P;       //< step forward M*P elements in matrix c
-      }
-
-      aPtr += M * P;  //< step forward M*P elements in matrix a
-      bPtr += N * P;  //< step forward N*P elements in matrix b
+    // inner loop over N in steps of P
+    for (uint32_t q = 0; q < N; q += P) {
+      // the MxPxP matrix-matrix multiplication
+      noOverflow &= gemm<T, cOrder, aOrder, core::MatrixOrder::kColumnMajor, useOverflowDetection>(M, P, P, cPtr, aPtr, bufferPtr);
+      bufferPtr += P * P;  //< step forward P*P elements in buffer
+      cPtr += M * P;       //< step forward M*P elements in matrix c
     }
 
-    return noOverflow;
-  } else {
-    // this multiplication is only called for K <= P representing the hardware multiplier
-    return gemm<T, cOrder, aOrder, bOrder, useOverflowDetection>(M, N, K, c, a, b);
+    aPtr += M * P;  //< step forward M*P elements in matrix a
+    bPtr += N * P;  //< step forward N*P elements in matrix b
   }
+
+  return noOverflow;
 }
 
+/// \brief returns size aligned to alignment
 template <typename T, T alignment>
 constexpr T getAlignedSize(const T size) {
   return size % alignment == 0 ? size : (size / alignment + 1) * alignment;
