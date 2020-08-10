@@ -2,6 +2,7 @@
 #define CONVOLUTION_CORE_FILTER_H
 
 #include <convolution/core/logging.h>
+#include <convolution/core/math.h>
 
 #include <cstdint>
 #include <memory>
@@ -31,12 +32,13 @@ class IFilter {
   virtual const T *getColumnBuffer() const = 0;
 };
 
-template <typename T, uint32_t kHeight, uint32_t kWidth, uint32_t kInputChannels = 1, uint32_t kOutputChannels = 1>
+template <typename T, uint32_t kHeight, uint32_t kWidth, uint32_t kInputChannels = 1, uint32_t kOutputChannels = 1, uint32_t alignment = 1>
 class Filter : public IFilter<T> {
  public:
   using StorageT = std::vector<T>;
   using StoragePtr = std::shared_ptr<StorageT>;
   static constexpr uint32_t kNumElements = kHeight * kWidth * kInputChannels * kOutputChannels;
+  static constexpr uint32_t kNumElementsAligned = core::getAlignedSize<uint32_t, alignment>(kHeight * kWidth * kInputChannels) * core::getAlignedSize<uint32_t, alignment>(kOutputChannels);
 
  private:
   StoragePtr filterBuffer = nullptr;  ///< the input filter buffer
@@ -60,7 +62,7 @@ class Filter : public IFilter<T> {
   const T *getColumnBuffer() const { return colBuffer->data(); }
   T *getColumnBuffer() { return colBuffer->data(); }
 
-  Filter<T, kHeight, kWidth> get(uint32_t icIdx, uint32_t ocIdx) const;
+  Filter<T, kHeight, kWidth, 1, 1, alignment> get(uint32_t icIdx, uint32_t ocIdx) const;
   T at(uint32_t hIdx, uint32_t wIdx, uint32_t icIdx, uint32_t ocIdx) const;
   T &at(uint32_t hIdx, uint32_t wIdx, uint32_t icIdx, uint32_t ocIdx);
 
@@ -75,16 +77,10 @@ class Filter : public IFilter<T> {
   virtual uint32_t bottomPadding() const override { return (kHeight - 1) / 2; }
 
   /// address calculation into the filter buffer
-  uint32_t calcFilterBufferOffset(const uint32_t fx, const uint32_t fy, const uint32_t ic, uint32_t oc) const {
-    return oc * kHeight * kWidth * kInputChannels + ic * kHeight * kWidth + fy * kWidth + fx;
-  }
+  uint32_t calcFilterBufferOffset(const uint32_t fx, const uint32_t fy, const uint32_t ic, uint32_t oc) const;
 
   /// address calculation into the column buffer
-  uint32_t calcColumnBufferOffset(const uint32_t fx, const uint32_t fy, const uint32_t ic, uint32_t oc) const {
-    const uint32_t vertical = ic * kHeight * kWidth + fy * kWidth + fx;
-    const uint32_t horizontal = oc;
-    return vertical * kOutputChannels + horizontal;
-  }
+  uint32_t calcColumnBufferOffset(const uint32_t fx, const uint32_t fy, const uint32_t ic, uint32_t oc) const;
 };
 
 }  // namespace core

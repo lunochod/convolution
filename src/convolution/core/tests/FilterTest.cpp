@@ -21,9 +21,10 @@ TYPED_TEST_SUITE(FilterTestFixture, Implementations);
 TYPED_TEST(FilterTestFixture, Instantiate) {
   constexpr uint32_t kHeight = 3;
   constexpr uint32_t kWidth = 5;
+  constexpr uint32_t alignment = 2;
 
   auto elements = core::test::getRandomVector<TypeParam>(kHeight * kWidth);
-  using TestFilter = core::Filter<TypeParam, kHeight, kWidth>;
+  using TestFilter = core::Filter<TypeParam, kHeight, kWidth, 1, 1, alignment>;
   ASSERT_NO_THROW(TestFilter f(elements));
 }
 
@@ -32,9 +33,10 @@ TYPED_TEST(FilterTestFixture, Get) {
   constexpr uint32_t kWidth = 5;
   constexpr uint32_t kInputChannels = 3;
   constexpr uint32_t kOutputChannels = 1;
+  constexpr uint32_t alignment = 2;
 
   auto elements = core::test::getRandomVector<TypeParam>(kHeight * kWidth * kInputChannels * kOutputChannels);
-  using TestFilter = core::Filter<TypeParam, kHeight, kWidth, kInputChannels, kOutputChannels>;
+  using TestFilter = core::Filter<TypeParam, kHeight, kWidth, kInputChannels, kOutputChannels, alignment>;
   TestFilter f(elements);
 
   for (uint32_t ocIdx = 0; ocIdx < kOutputChannels; ++ocIdx) {
@@ -50,10 +52,11 @@ TYPED_TEST(FilterTestFixture, ReadAt) {
   constexpr uint32_t kHeight = 3;
   constexpr uint32_t kWidth = 5;
   constexpr uint32_t kInputChannels = 3;
-  constexpr uint32_t kOutputChannels = 2;
+  constexpr uint32_t kOutputChannels = 3;
+  constexpr uint32_t alignment = 2;
 
   auto elements = core::test::getRandomVector<TypeParam>(kHeight * kWidth * kInputChannels * kOutputChannels);
-  using TestFilter = core::Filter<TypeParam, kHeight, kWidth, kInputChannels, kOutputChannels>;
+  using TestFilter = core::Filter<TypeParam, kHeight, kWidth, kInputChannels, kOutputChannels, alignment>;
   TestFilter f(elements);
 
   for (uint32_t ocIdx = 0; ocIdx < kOutputChannels; ++ocIdx) {
@@ -72,10 +75,11 @@ TYPED_TEST(FilterTestFixture, WriteAt) {
   constexpr uint32_t kHeight = 3;
   constexpr uint32_t kWidth = 5;
   constexpr uint32_t kInputChannels = 3;
-  constexpr uint32_t kOutputChannels = 2;
+  constexpr uint32_t kOutputChannels = 3;
+  constexpr uint32_t alignment = 2;
 
   auto elements = core::test::getRandomVector<TypeParam>(kHeight * kWidth * kInputChannels * kOutputChannels);
-  using TestFilter = core::Filter<TypeParam, kHeight, kWidth, kInputChannels, kOutputChannels>;
+  using TestFilter = core::Filter<TypeParam, kHeight, kWidth, kInputChannels, kOutputChannels, alignment>;
   TestFilter f(elements);
 
   uint32_t cnt = 0;
@@ -96,9 +100,10 @@ TYPED_TEST(FilterTestFixture, ColumnBuffer) {
   constexpr uint32_t kHeight = 3;
   constexpr uint32_t kWidth = 5;
   constexpr uint32_t kInputChannels = 3;
-  constexpr uint32_t kOutputChannels = 2;
+  constexpr uint32_t kOutputChannels = 3;
+  constexpr uint32_t alignment = 2;
 
-  using TestFilter = core::Filter<TypeParam, kHeight, kWidth, kInputChannels, kOutputChannels>;
+  using TestFilter = core::Filter<TypeParam, kHeight, kWidth, kInputChannels, kOutputChannels, alignment>;
 
   std::vector<TypeParam> data(TestFilter::kNumElements);
   for (uint32_t fIdx = 0; fIdx < data.size(); ++fIdx) {
