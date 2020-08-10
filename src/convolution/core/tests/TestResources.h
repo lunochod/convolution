@@ -1,6 +1,8 @@
 #ifndef CONVOLUTION_CORE_TEST_TESTRESOURCES_H
 #define CONVOLUTION_CORE_TEST_TESTRESOURCES_H
 
+#include <convolution/core/math.h>
+
 #include <cstdint>
 #include <limits>
 #include <random>
@@ -51,6 +53,16 @@ void initIdentityMatrix(const uint32_t M, const uint32_t N, T *mat) {
   memset(mat, 0, M * M * sizeof(T));
   for (uint32_t m = 0; m < M; ++m) {
     mat[m * M + m] = 1;
+  }
+}
+
+template <typename T, core::MatrixOrder order>
+void print(const uint32_t M, const uint32_t N, const T *data) {
+  for (uint32_t m = 0; m < M; ++m) {
+    for (uint32_t n = 0; n < N; ++n) {
+      printf("%4d", data[core::address<order>(M, N, m, n)]);
+    }
+    printf("\n");
   }
 }
 
