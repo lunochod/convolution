@@ -33,11 +33,13 @@ class Image {
   StoragePtr transformBufferPtr = nullptr;  ///< transform buffer
 
  public:
-  bool read(const fs::path &path);                            ///< read image at path into image buffer
+  bool read(const fs::path &path);  ///< read image at path into image buffer
+
+  template <uint32_t alignment>
   bool write(const fs::path &path, const uint32_t oc) const;  ///< write transform buffer to image specified at path
 
-  template <core::MatrixOrder order = core::MatrixOrder::kRowMajor>
-  bool img2col(const core::IFilter<uint8_t> &filter);  ///< convert image in image buffer into column buffer
+  template <core::MatrixOrder order = core::MatrixOrder::kRowMajor, uint32_t alignment = 1>
+  bool img2col(const core::IFilter<uint8_t> &filter);
 
   uint32_t width() const { return imgWidth; };
   uint32_t height() const { return imgHeight; };
@@ -53,10 +55,13 @@ class Image {
   uint32_t calcImageBufferOffset(const uint32_t ix, const uint32_t iy, const uint32_t channel) const;
 
   /// address calculation into the column buffer
+  template <uint32_t alignment>
   uint32_t calcColumnBufferOffset(const core::IFilter<uint8_t> &filter, const uint32_t ix, const uint32_t iy, const uint32_t ic, const uint32_t fx, const uint32_t fy) const;
 };
 
 }  // namespace io
 }  // namespace convolution
+
+#include <convolution/io/Image.inl>
 
 #endif  // CONVOLUTION_IO_IMAGE_H

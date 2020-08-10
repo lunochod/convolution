@@ -74,13 +74,17 @@ TEST(ImageTest, ColumnBuffer) {
   constexpr uint32_t fWidth = 5;
   constexpr uint32_t kInputChannels = 3;
   constexpr uint32_t kOutputChannels = 2;
-  using TestFilter = core::Filter<uint8_t, fHeight, fWidth, kInputChannels, kOutputChannels>;
+  constexpr uint32_t alignment = 3;
+  using TestFilter = core::Filter<uint8_t, fHeight, fWidth, kInputChannels, kOutputChannels, alignment>;
   TestFilter filter;
 
   // use image reader to process test image and create column buffer
   io::Image image{};
   ASSERT_TRUE(image.read(p));
-  ASSERT_TRUE(image.img2col(filter));
+
+  const bool img2colRet = image.img2col<core::MatrixOrder::kRowMajor, alignment>(filter);
+  ASSERT_TRUE(img2colRet);
+
   io::Image::StorageT colBuffer = *(image.getColumnBuffer());
 
   // read the test image directly to create the comparison data
@@ -116,7 +120,7 @@ TEST(ImageTest, ColumnBuffer) {
           }
         }
 
-        uint8_t const* colPtr = colBuffer.data() + image.calcColumnBufferOffset(filter, img_x, img_y, img_c, 0, 0);
+        uint8_t const* colPtr = colBuffer.data() + image.calcColumnBufferOffset<alignment>(filter, img_x, img_y, img_c, 0, 0);
         // compare the patch data with the data in the column buffer
         if (memcmp(patch.data(), colPtr, patch.size()) != 0) {
           printf("TEST: ");
